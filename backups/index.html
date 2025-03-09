@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemtrail Madness</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:hover {
+            transform: scale(1.1);
+        }
+        #game-logo {
+            width: 300px;
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 20px;
+            z-index: 5;
+            display: none;
+        }
+        #upgrades {
+            position: absolute;
+            top: 10px;
+            left: 200px;
+            display: none;
+            gap: 10px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #666;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+        .upgrade-btn.active#upgrade-size { opacity: 1; background-color: #fed430; }
+        .upgrade-btn.active#upgrade-style { opacity: 1; background-color: #fd491e; }
+        .upgrade-btn.active#upgrade-shoot { opacity: 1; background-color: #4d0e7e; }
+        .upgrade-btn:hover.active { filter: brightness(1.2); }
+        #cheatcode {
+            position: absolute;
+            top: 10px;
+            left: 450px;
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            z-index: 5;
+            display: none;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            font-size: 32px;
+            text-align: center;
+            z-index: 20;
+        }
+        #game-over-text {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        #play-again-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 20px;
+        }
+        #play-again-btn:hover {
+            transform: scale(1.1);
+            background-color: #ffd700;
+        }
+        #snicklink {
+            color: #ffcc00;
+            text-decoration: underline;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #snicklink:hover {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <div id="start-container">
+            <img id="game-logo" src="./assets/gamelogo.png" alt="Game Logo">
+            <button id="start-btn">Spiel starten</button>
+        </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="upgrades">
+        <button id="upgrade-size" class="upgrade-btn">Größer</button>
+        <button id="upgrade-style" class="upgrade-btn">Stil</button>
+        <button id="upgrade-shoot" class="upgrade-btn">???</button>
+    </div>
+    <div id="cheatcode">CHEATCODE: <span id="cheatcode-input"></span></div>
+    <div id="game-over">
+        <div id="game-over-text"></div>
+        <button id="play-again-btn">Nochmal spielen</button>
+        <a id="snicklink" href="https://snicklink.de" target="_blank">Besuche Snicklink.de</a>
+    </div>
+    <audio id="background-music" loop preload="auto">
+        <source src="./assets/wolken.mp3" type="audio/mp3">
+    </audio>
+    <audio id="schwurbler-music" preload="auto">
+        <source src="./assets/schwurbler.mp3" type="audio/mp3">
+    </audio>
+    <audio id="twinkle-sound" preload="auto">
+        <source src="./assets/twinkle.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explode-sound" preload="auto">
+        <source src="./assets/explode.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreDisplay = document.getElementById('score');
+        const music = document.getElementById('background-music');
+        const schwurblerMusic = document.getElementById('schwurbler-music');
+        const twinkleSound = document.getElementById('twinkle-sound');
+        const explodeSound = document.getElementById('explode-sound');
+        
+        // Add spray sound for chemtrail cleanup
+        const spraySound = new Audio('./assets/spray.mp3');
+        
+        const upgradesDiv = document.getElementById('upgrades');
+        const sizeBtn = document.getElementById('upgrade-size');
+        const styleBtn = document.getElementById('upgrade-style');
+        const shootBtn = document.getElementById('upgrade-shoot');
+        const cheatcodeDiv = document.getElementById('cheatcode');
+        const cheatcodeInput = document.getElementById('cheatcode-input');
+        const gameOverDiv = document.getElementById('game-over');
+        const gameOverText = document.getElementById('game-over-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Assets
+        const planeImg = new Image();
+        planeImg.src = './assets/plane.png';
+        const planerImg = new Image();
+        planerImg.src = './assets/planer.png';
+        const cursorImgs = Array(6).fill().map((_, i) => {
+            const img = new Image();
+            img.src = `./assets/tinfoilhat.png`;
+            return img;
+        });
+        const cloudImgs = [new Image(), new Image()];
+        cloudImgs[0].src = './assets/cloud1.png';
+        cloudImgs[1].src = './assets/cloud2.png';
+        
+        // Add willyAd image
+        const willyAd = new Image();
+        willyAd.src = './assets/willyad.png';
+
+        // Add target cursor image
+        const targetCursor = new Image();
+        targetCursor.src = './assets/target.png';
+
+        // Explosion frames
+        const explosionFrames = [];
+        for (let i = 0; i <= 22; i++) {
+            const img = new Image();
+            img.src = `./assets/exp/frame-${String(i).padStart(6, '0')}.png`;
+            explosionFrames.push(img);
+        }
+
+        // Game state
+        let gameStarted = false;
+        let gameOver = false;
+        let gameTime = 0;
+        let score = 0;
+        let sizeLevel = 0;
+        let styleLevel = 0;
+        let shootLevel = 0;
+        let starTimer = 0;
+        let onyxTimer = 0;
+        let isInverted = false;
+        let mouseX = -100;
+        let mouseY = -100;
+        let targetMode = false;
+        let targetPlane = null;
+        let targetCooldown = 0; // Add cooldown timer for target mode
+        let chemtrails = [];
+        let planes = [];
+        let particles = [];
+        let collectibles = [];
+        let twinkleEffects = [];
+        let clouds = [];
+        let cityFront = [];
+        let cityMid = [];
+        let cityFar = [];
+        let explosions = [];
+        let onyxSpawnedEarly = false;
+        let onyxTextX = canvas.width;
+
+        const upgradeCosts = [10000, 40000, 90000, 160000, 250000];
+        const cursorSizes = [60, 90, 135, 202.5, 303.75, 455.625];
+        const cursorColors = ['#fff', '#ff0', '#0ff', '#f0f', '#00f', '#f00'];
+        const explosionSizeFactor = 1.1; // Increased by 10%
+
+        // Classes
+        class Cloud {
+            constructor() {
+                this.x = Math.random() * (canvas.width + 200);
+                this.y = Math.random() * canvas.height * 0.8;
+                this.sizeFactor = Math.random() * 0.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.speed = Math.random() * 0.4 + 0.2;
+                this.type = Math.floor(Math.random() * 2);
+            }
+            update() {
+                this.x -= this.speed;
+                if (this.x + (190 * this.sizeFactor) < 0) {
+                    this.x = canvas.width + Math.random() * 200;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.sizeFactor = Math.random() * 0.5 + 0.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.speed = Math.random() * 0.4 + 0.2;
+                    this.type = Math.floor(Math.random() * 2);
+                }
+            }
+            draw() {
+                const img = cloudImgs[this.type];
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                const width = 190 * this.sizeFactor;
+                const height = 70 * this.sizeFactor;
+                if (img.complete && img.naturalWidth) {
+                    ctx.drawImage(img, this.x, this.y - height / 2, width, height);
+                } else {
+                    ctx.fillStyle = isInverted ? '#000' : '#fff';
+                    ctx.fillRect(this.x, this.y - height / 2, width, height);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Plane {
+            constructor() {
+                this.type = Math.random() < 0.1 ? 'stealth' : 'normal';
+                this.sizeFactor = this.type === 'stealth' ? Math.random() * 0.3 + 0.2 : (Math.random() < 0.05 ? 3 : Math.random() * 0.5 + 0.5);
+                this.lineWidth = this.type === 'stealth' ? 1 : (this.sizeFactor === 3 ? 9 : 3);
+                this.points = this.type === 'stealth' ? 20 : (this.sizeFactor === 3 ? 50 : 10);
+                this.opacity = this.type === 'stealth' ? Math.random() * 0.2 + 0.1 : Math.random() * 0.75 + 0.25;
+                this.tIncrement = this.type === 'stealth' ? 4 : 2;
+                this.isCurved = Math.random() < 0.1;
+                this.t = 0;
+                this.loopCount = this.isCurved ? Math.floor(Math.random() * 2) + 1 : 0;
+                this.initPath();
+                this.lastTrail = { x: this.x, y: this.y };
+            }
+            initPath() {
+                const speedFactor = this.type === 'stealth' ? Math.random() * 3 + 2 : Math.random() * 2 + 1;
+                if (this.isCurved) {
+                    this.fromLeft = Math.random() < 0.5;
+                    this.x = this.fromLeft ? -50 : canvas.width + 50;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.startX = this.x;
+                    this.startY = this.y;
+                    this.targetX = this.fromLeft ? canvas.width + 50 : -50;
+                    this.amplitude = canvas.height * 0.3;
+                    this.frequency = this.loopCount * Math.PI * 2 / canvas.width;
+                } else {
+                    const isHorizontal = Math.random() < 0.8;
+                    if (isHorizontal) {
+                        const fromLeft = Math.random() < 0.5;
+                        this.x = fromLeft ? -50 : canvas.width + 50;
+                        this.y = Math.random() < 0.9 ? Math.random() * (canvas.height * 0.66) : canvas.height * 0.66 + Math.random() * (canvas.height * 0.34);
+                        const targetX = fromLeft ? canvas.width : 0;
+                        const targetY = Math.random() * canvas.height;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    } else {
+                        const fromTop = Math.random() < 0.5;
+                        this.x = Math.random() * canvas.width;
+                        this.y = fromTop ? -50 : canvas.height + 50;
+                        const targetY = fromTop ? canvas.height : 0;
+                        const targetX = Math.random() * canvas.width;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    }
+                }
+            }
+            update() {
+                if (this.isCurved) {
+                    this.t += this.fromLeft ? this.tIncrement : -this.tIncrement;
+                    const prevX = this.x;
+                    const prevY = this.y;
+                    this.x = this.startX + this.t;
+                    this.y = this.startY + Math.sin(this.t * this.frequency) * this.amplitude;
+                    this.dx = this.x - prevX;
+                    this.dy = this.y - prevY;
+                } else {
+                    this.x += this.dx;
+                    this.y += this.dy;
+                }
+                
+                // Calculate the offset for chemtrail starting position
+                // Use the angle to position the trail at the edge of the plane image and slightly lower
+                const angle = Math.atan2(this.dy, this.dx);
+                const width = 75.3 * this.sizeFactor / 2; // Half width of the plane
+                const height = 32.1 * this.sizeFactor / 2; // Half height of the plane
+                
+                // Position at the back edge of the plane with a slight downward offset
+                const offsetX = -Math.cos(angle) * width * 0.9;
+                const offsetY = -Math.sin(angle) * width * 0.9 + 5;
+                
+                if (Math.hypot(this.x - this.lastTrail.x, this.y - this.lastTrail.y) > 5) {
+                    // Use the offset position for the chemtrail start point
+                    chemtrails.push({ 
+                        x1: this.lastTrail.x, 
+                        y1: this.lastTrail.y, 
+                        x2: this.x + offsetX, 
+                        y2: this.y + offsetY, 
+                        opacity: this.opacity, 
+                        lineWidth: this.lineWidth, 
+                        points: this.points 
+                    });
+                    this.lastTrail = { x: this.x + offsetX, y: this.y + offsetY };
+                }
+                
+                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                    planes = planes.filter(p => p !== this);
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.atan2(this.dy, this.dx));
+                const width = 75.3 * this.sizeFactor;
+                const height = 32.1 * this.sizeFactor;
+                
+                // Determine which image to use based on direction (left or right)
+                let img;
+                let flipHorizontal = false;
+                let flipVertical = false;
+                if (this.isCurved) {
+                    img = this.fromLeft ? planeImg : planerImg;
+                    flipHorizontal = !this.fromLeft; // Flip if coming from right
+                    flipVertical = !this.fromLeft; // Flip vertically if coming from right
+                } else {
+                    // For non-curved paths, check if dx is positive (moving right) or negative (moving left)
+                    img = this.dx > 0 ? planeImg : planerImg;
+                    flipHorizontal = this.dx < 0; // Flip if moving left (coming from right)
+                    flipVertical = this.dx < 0; // Flip vertically if moving left (coming from right)
+                }
+                
+                if (img.complete && img.naturalWidth) {
+                    // Create a temporary canvas for the black silhouette
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // Apply flip if needed
+                    if (flipHorizontal || flipVertical) {
+                        tempCtx.translate(flipHorizontal ? width : 0, flipVertical ? height : 0);
+                        tempCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+                    }
+                    
+                    // Draw the plane image on the temporary canvas
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    
+                    // Apply black color while preserving transparency
+                    tempCtx.globalCompositeOperation = 'source-in';
+                    tempCtx.fillStyle = '#000';
+                    tempCtx.fillRect(0, 0, width, height);
+                    
+                    // Draw the black silhouette onto the main canvas
+                    ctx.drawImage(tempCanvas, -width / 2, -height / 2, width, height);
+                } else {
+                    // Fallback if image isn't loaded
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(-width / 2, -height / 2, width, height);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        class PowerUp {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.size = 20;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.angle = 0;
+                this.particles = [];
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.angle += 0.1;
+                if (Math.random() < 0.05 && this.particles.length < 5) {
+                    this.particles.push({ x: 0, y: 0, size: Math.random() * 5 + 2, life: 15 });
+                }
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.life--;
+                    p.size = Math.max(0, p.size - 0.2);
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                }
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    collectibles = collectibles.filter(c => c !== this);
+                }
+            }
+            drawParticles() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                this.particles.forEach(p => {
+                    if (p.size > 0) {
+                        ctx.fillStyle = `rgba(255, 255, ${this.type === 'star' ? 0 : 255}, ${p.life / 15})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x + (Math.random() - 0.5) * 10, p.y + (Math.random() - 0.5) * 10, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.restore();
+            }
+        }
+
+        class CoinPowerUp extends PowerUp {
+            constructor(x, y) { super('coin', x, y); }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size / 2);
+                gradient.addColorStop(0, isInverted ? '#0028ff' : '#ffd700');
+                gradient.addColorStop(1, isInverted ? '#001466' : '#c0c0c0');
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class StarPowerUp extends PowerUp {
+            constructor(x, y) { super('star', x, y); }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#ff0000' : '#00ffff';
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                    const outerX = Math.cos(angle) * this.size / 2;
+                    const outerY = Math.sin(angle) * this.size / 2;
+                    const innerX = Math.cos(angle + 2 * Math.PI / 5) * this.size / 4;
+                    const innerY = Math.sin(angle + 2 * Math.PI / 5) * this.size / 4;
+                    if (i === 0) ctx.moveTo(outerX, outerY);
+                    else ctx.lineTo(outerX, outerY);
+                    ctx.lineTo(innerX, innerY);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class OnyxPowerUp extends PowerUp {
+            constructor(x, y) { super('onyx', x, y); }
+            draw() {
+                const pulse = Math.sin(gameTime * 0.1) * 2 + this.size / 2;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#fff' : '#000';
+                ctx.beginPath();
+                ctx.moveTo(0, -pulse);
+                ctx.lineTo(pulse / 1.5, 0);
+                ctx.lineTo(0, pulse);
+                ctx.lineTo(-pulse / 1.5, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 1;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.life = 20;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.life--;
+            }
+            draw() {
+                ctx.fillStyle = isInverted ? '#000' : `rgba(255, 255, 255, ${this.life / 20})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Twinkle {
+            constructor(x, y, text) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.life = 30;
+                this.size = 10;
+            }
+            update() {
+                this.life--;
+                this.size += 1;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.life / 30})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                if (this.text) {
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = `rgba(255, 255, 0, ${this.life / 30})`;
+                    ctx.fillText(this.text, this.x + 10, this.y - 10);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Explosion {
+            constructor(x, y, sizeFactor = 1) {
+                this.x = x;
+                this.y = y;
+                this.frame = 0; // Start at first frame
+                this.maxFrames = explosionFrames.length; // 23 frames
+                this.life = this.maxFrames * 2; // Each frame lasts 2 ticks (~0.77s at 60 FPS)
+                // Scale explosion size based on plane size
+                this.size = 100 * explosionSizeFactor * (sizeFactor || 1); 
+            }
+            update() {
+                this.life--;
+                this.frame = Math.floor((this.maxFrames - 1) * (1 - this.life / (this.maxFrames * 2))); // Progress through frames
+                if (this.frame >= this.maxFrames) this.frame = this.maxFrames - 1; // Cap at last frame
+            }
+            draw() {
+                const img = explosionFrames[this.frame];
+                if (img.complete && img.naturalWidth) {
+                    ctx.save();
+                    
+                    // If in onyx mode, invert the explosion colors
+                    if (isInverted) {
+                        ctx.filter = 'invert(1)';
+                    }
+                    
+                    ctx.drawImage(img, this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+                    ctx.restore();
+                }
+            }
+        }
+
+        // Cityscape
+        function generateCityscape() {
+            const buildingCount = Math.ceil(canvas.width / 100) + 5;
+            cityFront = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 100,
+                width: Math.random() * 80 + 20,
+                height: Math.random() * 100 + 50
+            }));
+            cityMid = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 120,
+                width: Math.random() * 100 + 30,
+                height: Math.random() * 80 + 30
+            }));
+            cityFar = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 150,
+                width: Math.random() * 120 + 40,
+                height: Math.random() * 60 + 20
+            }));
+        }
+
+        // Initialization
+        clouds = Array(8).fill().map(() => new Cloud());
+        generateCityscape();
+
+        // Start game
+        function startGame() {
+            startScreen.style.opacity = '0';
+            setTimeout(() => startScreen.style.display = 'none', 500);
+            canvas.classList.add('active');
+            scoreDisplay.style.display = 'block';
+            upgradesDiv.style.display = 'flex';
+            cheatcodeDiv.style.display = 'block';
+            gameOverDiv.style.display = 'none';
+
+            gameStarted = true;
+            gameOver = false;
+            gameTime = 0;
+            score = 0;
+            sizeLevel = 0;
+            styleLevel = 0;
+            shootLevel = 0;
+            starTimer = 0;
+            onyxTimer = 0;
+            isInverted = false;
+            targetMode = false;
+            targetPlane = null;
+            targetCooldown = 0;
+            onyxSpawnedEarly = false;
+            onyxTextX = canvas.width;
+            chemtrails = [];
+            planes = [new Plane()];
+            if (Math.random() > 0.5) planes.push(new Plane());
+            particles = [];
+            collectibles = [];
+            twinkleEffects = [];
+            explosions = [];
+            cheatcodeInput.textContent = '';
+
+            scoreDisplay.textContent = `Score: ${score}`;
+            updateUpgrades();
+            try { 
+                twinkleSound.play();
+                music.play();
+            } catch (e) { console.log("Startup audio failed:", e); }
+        }
+
+        // Events
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', startGame);
+        canvas.addEventListener('mousemove', e => { 
+            mouseX = e.offsetX; 
+            mouseY = e.offsetY; 
+            
+            // Only reset target mode if not in cooldown
+            if (targetCooldown <= 0) {
+                targetMode = false;
+                targetPlane = null;
+            }
+            
+            // Check if cursor is over a plane when in shoot mode
+            if (shootLevel > 0 && gameStarted && !gameOver) {
+                for (let i = planes.length - 1; i >= 0; i--) {
+                    const plane = planes[i];
+                    const width = 75.3 * plane.sizeFactor;
+                    const height = 32.1 * plane.sizeFactor;
+                    // Increase wiggle room from 20% to 40% for easier targeting
+                    const targetWidth = width * 1.4;
+                    const targetHeight = height * 1.4;
+                    if (mouseX >= plane.x - targetWidth / 2 && mouseX <= plane.x + targetWidth / 2 &&
+                        mouseY >= plane.y - targetHeight / 2 && mouseY <= plane.y + targetHeight / 2) {
+                        targetMode = true;
+                        targetPlane = plane;
+                        break;
+                    }
+                }
+            }
+        });
+        canvas.addEventListener('click', e => {
+            if (shootLevel > 0 && gameStarted && !gameOver) {
+                const clickX = e.offsetX;
+                const clickY = e.offsetY;
+                
+                // If in target mode, guaranteed hit on the targeted plane
+                if (targetMode && targetPlane) {
+                    // Create explosion at the plane's position
+                    explosions.push(new Explosion(targetPlane.x, targetPlane.y, targetPlane.sizeFactor));
+                    try { explodeSound.play(); } catch (e) { console.log("Explode sound failed:", e); }
+                    // Remove the plane
+                    planes = planes.filter(p => p !== targetPlane);
+                    
+                    // Set cooldown to keep target cursor visible for a moment (30 frames ≈ 0.5 seconds)
+                    targetCooldown = 30;
+                    
+                    return;
+                }
+                
+                // Regular click detection (fallback)
+                for (let i = planes.length - 1; i >= 0; i--) {
+                    const plane = planes[i];
+                    const width = 75.3 * plane.sizeFactor;
+                    const height = 32.1 * plane.sizeFactor;
+                    if (clickX >= plane.x - width / 2 && clickX <= plane.x + width / 2 &&
+                        clickY >= plane.y - height / 2 && clickY <= plane.y + height / 2) {
+                        // Create explosion sized according to the plane's size
+                        explosions.push(new Explosion(plane.x, plane.y, plane.sizeFactor));
+                        try { explodeSound.play(); } catch (e) { console.log("Explode sound failed:", e); }
+                        planes.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        });
+        sizeBtn.addEventListener('click', () => {
+            if (sizeLevel < upgradeCosts.length && score >= upgradeCosts[sizeLevel]) {
+                score -= upgradeCosts[sizeLevel];
+                sizeLevel++;
+                updateUpgrades();
+            }
+        });
+        styleBtn.addEventListener('click', () => {
+            if (styleLevel < upgradeCosts.length && score >= upgradeCosts[styleLevel]) {
+                score -= upgradeCosts[styleLevel];
+                styleLevel++;
+                updateUpgrades();
+            }
+        });
+        shootBtn.addEventListener('click', () => {
+            if (shootLevel === 0 && score >= 10000) {
+                score -= 10000;
+                shootLevel = 1;
+                updateUpgrades();
+            }
+        });
+        let cheatInput = '';
+        document.addEventListener('keydown', e => {
+            if (!gameStarted || gameOver) return;
+            cheatInput += e.key.toUpperCase();
+            if (cheatInput.length > 20) cheatInput = cheatInput.slice(-20);
+            cheatcodeInput.textContent = cheatInput;
+            if (cheatInput.includes('REICH')) {
+                score += 1000000;
+                scoreDisplay.textContent = `Score: ${score}`;
+                updateUpgrades();
+                cheatInput = '';
+                cheatcodeInput.textContent = '';
+            } else if (cheatInput.includes('END')) {
+                // Trigger game over screen for testing
+                gameOver = true;
+                gameOverText.textContent = `Spiel vorbei! Punkte: ${score}\nDeutschland ist komplett verseucht und DU allein hast Schuld!`;
+                gameOverDiv.style.display = 'flex';
+                
+                // Stop all game movement and clear arrays
+                planes = [];
+                chemtrails = [];
+                particles = [];
+                collectibles = [];
+                twinkleEffects = [];
+                explosions = [];
+                
+                try { music.pause(); schwurblerMusic.pause(); } catch (e) { console.log("Game over audio failed:", e); }
+                
+                cheatInput = '';
+                cheatcodeInput.textContent = '';
+            } else if (cheatInput.includes('ONYX')) {
+                // Activate onyx mode for testing
+                onyxTimer = 840;
+                isInverted = true;
+                onyxTextX = canvas.width; // Reset text position to start from right
+                try { 
+                    music.pause(); 
+                    schwurblerMusic.play(); 
+                } catch (e) { console.log("Onyx audio failed:", e); }
+                
+                cheatInput = '';
+                cheatcodeInput.textContent = '';
+            }
+        });
+
+        function updateUpgrades() {
+            sizeBtn.classList.toggle('active', sizeLevel < upgradeCosts.length && score >= upgradeCosts[sizeLevel]);
+            styleBtn.classList.toggle('active', styleLevel < upgradeCosts.length && score >= upgradeCosts[styleLevel]);
+            shootBtn.classList.toggle('active', shootLevel === 0 && score >= 10000);
+        }
+
+        // Game loop
+        function animate() {
+            if (!ctx) {
+                console.error("Canvas context not initialized!");
+                return;
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, isInverted ? '#b2f181' : '#4d0e7e');
+            gradient.addColorStop(0.5, isInverted ? '#02b6e1' : '#fd491e');
+            gradient.addColorStop(1, isInverted ? '#012bcf' : '#fed430');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            clouds.forEach(cloud => {
+                cloud.update();
+                cloud.draw();
+            });
+
+            if (gameStarted && !gameOver) {
+                for (let i = chemtrails.length - 1; i >= 0; i--) {
+                    const trail = chemtrails[i];
+                    const dist = pointLineDistance(mouseX, mouseY, trail.x1, trail.y1, trail.x2, trail.y2);
+                    const cleanupDistance = starTimer > 0 ? cursorSizes[sizeLevel] / 1.5 : cursorSizes[sizeLevel] / 3;
+                    if (dist < cleanupDistance) {
+                        for (let j = 0; j < 5; j++) {
+                            const t = j / 4;
+                            particles.push(new Particle(trail.x1 + (trail.x2 - trail.x1) * t, trail.y1 + (trail.y2 - trail.y1) * t));
+                        }
+                        score += trail.points;
+                        chemtrails.splice(i, 1);
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        updateUpgrades();
+                        
+                        // Play spray sound when cleaning chemtrails
+                        try { 
+                            spraySound.currentTime = 0;
+                            spraySound.play(); 
+                        } catch (e) { console.log("Spray sound failed:", e); }
+                    } else {
+                        ctx.strokeStyle = isInverted ? '#000' : '#fff';
+                        ctx.lineWidth = trail.lineWidth;
+                        ctx.beginPath();
+                        ctx.moveTo(trail.x1, trail.y1);
+                        ctx.lineTo(trail.x2, trail.y2);
+                        ctx.stroke();
+                    }
+                }
+                planes.forEach(plane => {
+                    plane.update();
+                    plane.draw();
+                });
+            }
+
+            ctx.fillStyle = isInverted ? '#aaa' : '#555';
+            cityFar.forEach(b => {
+                b.x -= 0.25;
+                if (b.x + b.width < 0) b.x = canvas.width;
+                if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+            });
+            ctx.fillStyle = isInverted ? '#ccc' : '#333';
+            cityMid.forEach(b => {
+                b.x -= 0.5;
+                if (b.x + b.width < 0) b.x = canvas.width;
+                if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+            });
+            ctx.fillStyle = isInverted ? '#fff' : '#000';
+            cityFront.forEach(b => {
+                b.x -= 1;
+                if (b.x + b.width < 0) b.x = canvas.width;
+                if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+            });
+
+            if (gameStarted && !gameOver) {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const particle = particles[i];
+                    particle.update();
+                    particle.draw();
+                    if (particle.life <= 0) particles.splice(i, 1);
+                }
+
+                if (gameTime === 1800 + Math.floor(Math.random() * 600) && !onyxSpawnedEarly) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height * 0.8;
+                    collectibles.push(new OnyxPowerUp(x, y));
+                    onyxSpawnedEarly = true;
+                } else if (Math.random() < 0.003 && onyxSpawnedEarly) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height * 0.8;
+                    const rand = Math.random();
+                    if (rand < 0.05) collectibles.push(new OnyxPowerUp(x, y));
+                    else if (rand < 0.5) collectibles.push(new StarPowerUp(x, y));
+                    else collectibles.push(new CoinPowerUp(x, y));
+                }
+
+                for (let i = collectibles.length - 1; i >= 0; i--) {
+                    const powerUp = collectibles[i];
+                    if (!powerUp) continue;
+                    powerUp.update();
+                    powerUp.draw();
+                    const dist = Math.hypot(mouseX - powerUp.x, mouseY - powerUp.y);
+                    if (dist < powerUp.size / 2 + cursorSizes[sizeLevel] / 2) {
+                        twinkleEffects.push(new Twinkle(powerUp.x, powerUp.y, powerUp.type === 'coin' ? '+500' : null));
+                        try { twinkleSound.play(); } catch (e) { console.log("Twinkle sound failed:", e); }
+                        switch (powerUp.type) {
+                            case 'coin': score += 500; break;
+                            case 'star': starTimer = 600; break;
+                            case 'onyx':
+                                onyxTimer = 840;
+                                isInverted = true;
+                                try { music.pause(); schwurblerMusic.play(); } catch (e) { console.log("Onyx audio failed:", e); }
+                                break;
+                        }
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        updateUpgrades();
+                        collectibles.splice(i, 1);
+                    }
+                }
+
+                for (let i = twinkleEffects.length - 1; i >= 0; i--) {
+                    const twinkle = twinkleEffects[i];
+                    twinkle.update();
+                    twinkle.draw();
+                    if (twinkle.life <= 0) twinkleEffects.splice(i, 1);
+                }
+
+                for (let i = explosions.length - 1; i >= 0; i--) {
+                    const explosion = explosions[i];
+                    explosion.update();
+                    explosion.draw();
+                    if (explosion.life <= 0) explosions.splice(i, 1);
+                }
+
+                if (starTimer > 0) starTimer--;
+                if (onyxTimer > 0) {
+                    onyxTimer--;
+                    if (onyxTimer === 0) {
+                        isInverted = false;
+                        try { 
+                            music.play(); 
+                            schwurblerMusic.pause(); 
+                            schwurblerMusic.currentTime = 0; 
+                        } catch (e) { console.log("Audio revert failed:", e); }
+                    }
+                }
+                
+                // Handle target cooldown
+                if (targetCooldown > 0) {
+                    targetCooldown--;
+                    if (targetCooldown === 0) {
+                        targetMode = false;
+                        targetPlane = null;
+                    }
+                }
+
+                if (isInverted) {
+                    ctx.save();
+                    ctx.font = `${canvas.width / 3.75}px Impact`;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.textAlign = 'left';
+                    const text = 'DAMN IT FEELS GOOD TO BE A SCHWURBLER';
+                    // Position the text lower on the screen (75% down from the top)
+                    ctx.fillText(text, onyxTextX, canvas.height * 0.75);
+                    // Increase scroll speed by another 20% (from 6 to 7.2)
+                    onyxTextX -= 7.2;
+                    if (onyxTextX < -ctx.measureText(text).width) onyxTextX = canvas.width;
+                    ctx.restore();
+                }
+
+                gameTime++;
+                if (gameTime % 300 === 0 && planes.length < 6) planes.push(new Plane());
+
+                let totalTrailLength = chemtrails.reduce((sum, t) => sum + Math.hypot(t.x2 - t.x1, t.y2 - t.y1), 0);
+                if ((totalTrailLength * 3) / (canvas.width * canvas.height) > 0.2) {
+                    gameOver = true;
+                    gameOverText.textContent = `Spiel vorbei! Punkte: ${score}\nDeutschland ist komplett verseucht und DU allein hast Schuld!`;
+                    gameOverDiv.style.display = 'flex';
+                    
+                    // Stop all game movement and clear arrays
+                    planes = [];
+                    chemtrails = [];
+                    particles = [];
+                    collectibles = [];
+                    twinkleEffects = [];
+                    explosions = [];
+                    
+                    try { music.pause(); schwurblerMusic.pause(); } catch (e) { console.log("Game over audio failed:", e); }
+                }
+            }
+
+            if (mouseX >= 0 && mouseX <= canvas.width && mouseY >= 0 && mouseY <= canvas.height && !gameOver) {
+                const size = cursorSizes[sizeLevel];
+                ctx.save();
+                
+                // Draw target cursor if in target mode
+                if (targetMode && targetPlane) {
+                    const targetSize = size * 1.5; // Make target cursor a bit larger
+                    if (targetCursor.complete && targetCursor.naturalWidth) {
+                        ctx.drawImage(targetCursor, mouseX - targetSize / 2, mouseY - targetSize / 2, targetSize, targetSize);
+                    } else {
+                        // Fallback if target image isn't loaded
+                        ctx.strokeStyle = '#f00';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(mouseX, mouseY, targetSize / 3, 0, Math.PI * 2);
+                        ctx.moveTo(mouseX - targetSize / 2, mouseY);
+                        ctx.lineTo(mouseX + targetSize / 2, mouseY);
+                        ctx.moveTo(mouseX, mouseY - targetSize / 2);
+                        ctx.lineTo(mouseX, mouseY + targetSize / 2);
+                        ctx.stroke();
+                    }
+                } else {
+                    // Regular cursor (tinfoil hat)
+                    const img = cursorImgs[sizeLevel];
+                    if (img.complete && img.naturalWidth) {
+                        ctx.drawImage(img, mouseX - size / 2, mouseY - size / 2, size, size);
+                    } else {
+                        ctx.fillStyle = isInverted ? '#000' : cursorColors[styleLevel];
+                        ctx.fillRect(mouseX - size / 2, mouseY - size / 2, size, size);
+                    }
+                }
+                
+                ctx.restore();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+            return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+        }
+
+        // Asset loading check
+        function waitForAssets(callback) {
+            const assets = [planeImg, planerImg, cloudImgs[0], cloudImgs[1], ...cursorImgs, ...explosionFrames];
+            let loaded = 0;
+            const total = assets.length;
+
+            function checkLoaded() {
+                loaded++;
+                if (loaded === total) {
+                    console.log("All assets loaded, starting game loop...");
+                    callback();
+                }
+            }
+
+            assets.forEach(img => {
+                if (img.complete && img.naturalWidth) {
+                    checkLoaded();
+                } else {
+                    img.onload = checkLoaded;
+                    img.onerror = () => {
+                        console.warn(`Failed to load ${img.src}, proceeding with placeholder`);
+                        checkLoaded();
+                    };
+                }
+            });
+        }
+
+        // Kickoff
+        canvas.style.cursor = 'none';
+        console.log("Grok's Chemtrail Madness - Initializing...");
+        waitForAssets(() => {
+            console.log("Grok's Chemtrail Madness - Ready to soar!");
+            animate();
+        });
+    </script>
+</body>
+</html>

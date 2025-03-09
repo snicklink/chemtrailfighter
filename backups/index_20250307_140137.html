@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemtrail Madness</title>
+    <!-- 
+    PERFORMANCE OPTIMIZATIONS:
+    1. Game over threshold set to 8% chemtrail density to prevent slowdown
+    2. Added visual warning when approaching 7% chemtrail density
+    3. Skip rendering chemtrails that are far off-screen
+    -->
+    <!-- Add Visitor-like pixel font (Press Start 2P is the closest widely available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Visitor';
+            src: url('https://dl.dropboxusercontent.com/s/ecgr5oc2k3p9u36/visitor1.ttf?dl=0') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:hover {
+            transform: scale(1.1);
+        }
+        #game-logo {
+            width: 300px;
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 20px;
+            z-index: 5;
+            display: none;
+        }
+        #sound-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        #sound-toggle:hover {
+            background-color: #000;
+            transform: scale(1.05);
+        }
+        #perf-toggle {
+            position: absolute;
+            top: 10px;
+            right: 60px; /* Position it to the left of the sound toggle */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 5;
+            display: none; /* Initially hidden, will be shown when game starts */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #perf-toggle:hover {
+            background-color: #000;
+            transform: scale(1.05);
+        }
+        #perf-toggle.active {
+            background-color: #2a6e2a; /* Green background when active */
+        }
+        #upgrades {
+            position: absolute;
+            top: 10px;
+            left: 200px;
+            display: none;
+            gap: 10px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            background-color: #666;
+            color: #fff;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s, background-color 0.3s;
+            font-weight: bold;
+        }
+        .upgrade-btn.active#upgrade-size { opacity: 1; background-color: #bd5704; }
+        .upgrade-btn.active#upgrade-style { opacity: 1; background-color: #b00c9f; }
+        .upgrade-btn.active#upgrade-shoot { opacity: 1; background-color: #510f7c; }
+        .upgrade-btn:hover.active { filter: brightness(1.2); }
+        #cheatcode {
+            position: absolute;
+            top: 10px;
+            left: 450px;
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            z-index: 5;
+            display: none;
+            width: 150px;
+            box-sizing: border-box;
+            text-transform: uppercase; /* Force text to display as uppercase */
+        }
+        #cheatcode:focus {
+            outline: none;
+        }
+        #cheatcode::placeholder {
+            color: #999; /* Lighter color for placeholder text */
+            opacity: 1; /* Ensure placeholder is visible */
+        }
+        /* Hide placeholder when user types */
+        #cheatcode:not(:placeholder-shown)::placeholder {
+            opacity: 0;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            z-index: 20;
+        }
+        #game-over-text {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        #game-over-text h1 {
+            font-size: 64px;
+            margin: 0;
+        }
+        #game-over-text p.points {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        #game-over-text p.message {
+            font-size: 20px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        #play-again-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 20px;
+        }
+        #play-again-btn:hover {
+            transform: scale(1.1);
+            background-color: #ffd700;
+        }
+        #willy-ad {
+            width: 200px;
+            height: auto;
+            cursor: pointer;
+        }
+        #snicklink {
+            color: #ffcc00;
+            text-decoration: underline;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #snicklink:hover {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <div id="start-container">
+            <img id="game-logo" src="./assets/gamelogo.png" alt="Game Logo">
+            <button id="start-btn">Spiel starten</button>
+        </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="sound-toggle">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+            <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <div id="upgrades">
+        <button id="upgrade-size" class="upgrade-btn">Size</button>
+        <button id="upgrade-style" class="upgrade-btn">Style</button>
+        <button id="upgrade-shoot" class="upgrade-btn">???</button>
+    </div>
+    <input id="cheatcode" type="text" placeholder="CHEAT">
+    <div id="game-over">
+        <div id="game-over-text">
+            <h1>GAME OVER</h1>
+            <p class="points">Points: 0</p>
+            <p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>
+        </div>
+        <button id="play-again-btn">Nochmal spielen</button>
+        <a href="https://snicklink.de" target="_blank"><img id="willy-ad" src="./assets/willyad.png" alt="Willy Ad"></a>
+    </div>
+    <audio id="background-music" loop preload="auto">
+        <source src="./assets/wolken.mp3" type="audio/mp3">
+    </audio>
+    <audio id="schwurbler-music" preload="auto">
+        <source src="./assets/schwurbler.mp3" type="audio/mp3">
+    </audio>
+    <audio id="twinkle-sound" preload="auto">
+        <source src="./assets/twinkle.mp3" type="audio/mp3">
+    </audio>
+    <audio id="shot-sound" preload="auto">
+        <source src="./assets/shot.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explode-sound" preload="auto">
+        <source src="./assets/explode.mp3" type="audio/mp3">
+    </audio>
+    <audio id="sky-music" preload="auto">
+        <source src="./assets/sky.mp3" type="audio/mp3">
+    </audio>
+    <audio id="best-sound" preload="auto">
+        <source src="./assets/best.mp3" type="audio/mp3">
+    </audio>
+    <audio id="star-sound" preload="auto">
+        <source src="./assets/star.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill-sound" preload="auto">
+        <source src="./assets/kill.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill2-sound" preload="auto">
+        <source src="./assets/kill2.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill3-sound" preload="auto">
+        <source src="./assets/kill3.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill4-sound" preload="auto">
+        <source src="./assets/kill4.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill5-sound" preload="auto">
+        <source src="./assets/kill5.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill6-sound" preload="auto">
+        <source src="./assets/kill6.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill7-sound" preload="auto">
+        <source src="./assets/kill7.mp3" type="audio/mp3">
+    </audio>
+    <audio id="life-sound" preload="auto">
+        <source src="./assets/life.mp3" type="audio/mp3">
+    </audio>
+    <audio id="alarm-sound" preload="auto">
+        <source src="./assets/alarm.mp3" type="audio/mp3">
+    </audio>
+    <audio id="own-music" preload="auto">
+        <source src="./assets/own.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreDisplay = document.getElementById('score');
+        const music = document.getElementById('background-music');
+        const schwurblerMusic = document.getElementById('schwurbler-music');
+        const twinkleSound = document.getElementById('twinkle-sound');
+        const shotSound = document.getElementById('shot-sound');
+        const explodeSound = document.getElementById('explode-sound');
+        const soundToggle = document.getElementById('sound-toggle');
+        const skyMusic = document.getElementById('sky-music');
+        const bestSound = document.getElementById('best-sound');
+        const starSound = new Audio('./assets/star.mp3'); // Add star sound for star power-up
+        const killSound = new Audio('./assets/kill.mp3'); // Sound for first kill in star mode
+        const kill2Sound = new Audio('./assets/kill2.mp3'); // Sound for second kill in star mode
+        const kill3Sound = new Audio('./assets/kill3.mp3'); // Sound for third kill in star mode
+        const kill4Sound = new Audio('./assets/kill4.mp3'); // Sound for fourth kill in star mode
+        const kill5Sound = new Audio('./assets/kill5.mp3'); // Sound for fifth kill in star mode
+        const kill6Sound = new Audio('./assets/kill6.mp3'); // Sound for sixth kill in star mode
+        const kill7Sound = new Audio('./assets/kill7.mp3'); // Sound for seventh kill in star mode
+        const lifeSound = document.getElementById('life-sound');
+        const alarmSound = document.getElementById('alarm-sound');
+        const ownMusic = document.getElementById('own-music'); // Add own music for Schwab mode
+        
+        const upgradesDiv = document.getElementById('upgrades');
+        const sizeBtn = document.getElementById('upgrade-size');
+        const styleBtn = document.getElementById('upgrade-style');
+        const shootBtn = document.getElementById('upgrade-shoot');
+        const cheatcodeInput = document.getElementById('cheatcode');
+        const gameOverDiv = document.getElementById('game-over');
+        const gameOverText = document.getElementById('game-over-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const perfToggle = document.getElementById('perf-toggle');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const planeImg = new Image();
+        planeImg.src = './assets/plane.png';
+        const planerImg = new Image();
+        planerImg.src = './assets/planer.png';
+        const schwabImg = new Image();
+        schwabImg.src = './assets/Schwab.png';
+        const cursorImgs = Array(6).fill().map((_, i) => {
+            const img = new Image();
+            // Use goldhat.png for the first style upgrade (styleLevel = 1)
+            if (i === 1) {
+                img.src = `./assets/goldhat.png`;
+            } 
+            // Use bratwurst.png for the second style upgrade (styleLevel = 2)
+            else if (i === 2) {
+                img.src = `./assets/bratwurst.png`;
+            }
+            // Use bademantel.png for the third style upgrade (styleLevel = 3)
+            else if (i === 3) {
+                img.src = `./assets/bademantel.png`;
+            }
+            // Use john.png for the fourth style upgrade (styleLevel = 4)
+            else if (i === 4) {
+                img.src = `./assets/john.png`;
+            }
+            // Use willy.png for the fifth style upgrade (styleLevel = 5)
+            else if (i === 5) {
+                img.src = `./assets/willy.png`;
+            }
+            // Use tinfoilhat.png for the default (styleLevel = 0)
+            else {
+                img.src = `./assets/tinfoilhat.png`;
+            }
+            return img;
+        });
+        const cloudImgs = [new Image(), new Image()];
+        cloudImgs[0].src = './assets/cloud1.png';
+        cloudImgs[1].src = './assets/cloud2.png';
+        const explosionFrames = [];
+        for (let i = 0; i <= 22; i++) {
+            const img = new Image();
+            img.src = `./assets/exp/frame-${String(i).padStart(6, '0')}.png`;
+            explosionFrames.push(img);
+        }
+
+        let gameStarted = false;
+        let gameOver = false;
+        let gameTime = 0;
+        let score = 0;
+        let totalScore = 0; // Track total points collected during the game
+        let cheatPoints = 0; // Track points gained through cheatcodes
+        let highScore = parseInt(localStorage.getItem('highScore')) || 0;
+        let sizeLevel = 0;
+        let prevSizeLevel = undefined; // Added for star power-up temporary size upgrade
+        let styleLevel = 0;
+        let shootLevel = 0;
+        let starTimer = 0;
+        let onyxTimer = 0;
+        let onyxTextX = canvas.width;
+        let isInverted = false;
+        // Variables for cursor flashing effect during star power-up
+        let cursorFlashing = false;
+        let flashOpacity = 0;
+        let flashDirection = -1;
+        let mouseX = -100;
+        let mouseY = -100;
+        let targetMode = false;
+        let targetPlane = null;
+        let targetRemaining = false;
+        let targetPosition = { x: 0, y: 0 };
+        let shots = [];
+        let shotCount = 0;
+        let shotCooldown = 0;
+        let isMouseDown = false;
+        let chemtrails = [];
+        let planes = [];
+        let fallingPlanes = []; // Array to track planes falling in star mode
+        let consecutiveStarKills = 0; // Counter for consecutive plane kills in star mode
+        let particles = [];
+        let collectibles = [];
+        let twinkleEffects = [];
+        let clouds = [];
+        let cityFront = [];
+        let cityMid = [];
+        let cityFar = [];
+        let explosions = [];
+        let soundEnabled = true;
+        let messages = [];
+        let comboCount = 0;
+        let lastPlaneExplodeTime = 0;
+        let skyCleanMessageShown = false;
+        let gameHasStarted = false;
+        let schwabMode = false;
+        let sprayParticles = [];
+        let hitIndicators = []; // Array for hit indicators
+        let slowMode = false; // Track slow mode status for plane spawning
+        // Add a variable to track Venom mode
+        let venomMode = false;
+        // Variable to store the last frame for game over screen
+        let lastFrameImageData = null;
+
+        // Replace single upgrade costs array with separate arrays for each type
+        // const upgradeCosts = [10000, 40000, 90000, 160000, 250000];
+        const sizeUpgradeCosts = [100000, 250000, 1000000, 5000000, 10000000]; // Size upgrade costs
+        const styleUpgradeCosts = [50000, 100000, 150000, 200000, 1000000]; // Style upgrade costs
+        const shootUpgradeCosts = [250000, 1000000, 5000000]; // Shoot upgrade costs - adding third level for Venom
+        
+        const cursorSizes = [60, 90, 135, 202.5, 303.75, 455.625];
+        const cursorColors = ['#fff', '#ff0', '#0ff', '#f0f', '#00f', '#f00'];
+        const explosionSizeFactor = 1.1;
+
+        // Global spray particle offset control 
+        // This value determines how far away from the plane the spray particles appear
+        // Positive values = further behind the plane
+        // Negative values = closer to the plane
+        // Change this value to adjust all spray particles at once
+        let SPRAY_OFFSET = -0.8; // Very negative value moves particles much closer to the plane
+        
+        // Variable to track cheat code input
+        let cheatsInput = "";
+
+        // Plane spawn parameters
+        const MIN_SPAWN_INTERVAL = 150; // Fastest spawn rate (frames between spawns)
+        const MAX_SPAWN_INTERVAL = 450; // Slowest spawn rate (frames between spawns)
+        const SPAWN_RAMP_UP_TIME = 60 * 60; // 60 seconds at 60fps = 3600 frames for full ramp-up
+        let nextPlaneSpawn = 0; // Track when to spawn the next plane
+        
+        // Power-up spawn parameters
+        const BASE_POWERUP_CHANCE = 0.003; // Base chance per frame
+        const MIN_POWERUP_INTERVAL = 900; // Minimum frames between power-ups (15 seconds)
+        let lastPowerupTime = 0; // Track last powerup spawn time
+
+        // Special trail trackers
+        let reptoTrailsExist = false;
+        let rainbowTrailsExist = false;
+        let reptoTrailsCount = 0;
+        let rainbowTrailsCount = 0;
+        let reptoTrailsCleared = false;
+        let rainbowTrailsCleared = false;
+
+        class Cloud {
+            constructor() {
+                this.x = Math.random() * (canvas.width + 200);
+                this.y = Math.random() * canvas.height * 0.8;
+                this.sizeFactor = Math.random() * 0.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.speed = Math.random() * 0.4 + 0.2;
+                this.type = Math.floor(Math.random() * 2);
+            }
+            update() {
+                this.x -= this.speed;
+                if (this.x + (190 * this.sizeFactor) < 0) {
+                    this.x = canvas.width + Math.random() * 200;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.sizeFactor = Math.random() * 0.5 + 0.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.speed = Math.random() * 0.4 + 0.2;
+                    this.type = Math.floor(Math.random() * 2);
+                }
+            }
+            draw() {
+                const img = cloudImgs[this.type];
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                const width = 190 * this.sizeFactor;
+                const height = 70 * this.sizeFactor;
+                if (img.complete && img.naturalWidth) {
+                    ctx.drawImage(img, this.x, this.y - height / 2, width, height);
+                } else {
+                    ctx.fillStyle = isInverted ? '#000' : '#fff';
+                    ctx.fillRect(this.x, this.y - height / 2, width, height);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Plane {
+            constructor(forceTrailType = null) {
+                // Determine plane type and size
+                this.type = Math.random() < 0.1 ? 'stealth' : 'normal';
+                this.sizeFactor = this.type === 'stealth' ? Math.random() * 0.3 + 0.2 : (Math.random() < 0.05 ? 3 : Math.random() * 0.5 + 0.5);
+                this.lineWidth = this.type === 'stealth' ? 1 : (this.sizeFactor === 3 ? 9 : 3);
+                this.points = this.type === 'stealth' ? 20 : (this.sizeFactor === 3 ? 50 : 10);
+                this.opacity = this.type === 'stealth' ? Math.random() * 0.2 + 0.1 : Math.random() * 0.75 + 0.25;
+                this.tIncrement = this.type === 'stealth' ? 4 : 2;
+                
+                // Create a unique ID for tracking trail segments
+                this.id = 'plane_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
+                // Special trail types - allow force setting a specific trail type
+                if (forceTrailType) {
+                    this.trailType = forceTrailType;
+                    
+                    if (forceTrailType === 'rainbow') {
+                        this.trailMultiplier = 3; // Triple points
+                        this.trailMessage = "INSTA-GAY TRAIL BONUS";
+                        console.log("Spawned rainbow trail plane!");
+                    } else if (forceTrailType === 'repto') {
+                        this.trailMultiplier = 2; // Double points
+                        this.trailMessage = "REPTO TRAIL BONUS";
+                        console.log("Spawned repto trail plane!");
+                    }
+                } else {
+                    // Adjust probabilities to make special trails more common
+                    const random = Math.random();
+                    if (random < 1/40) { // Increased from 1/50 to 1/40
+                        this.trailType = 'rainbow';
+                        this.trailMultiplier = 3; // Triple points
+                        this.trailMessage = "INSTA-GAY TRAIL BONUS";
+                        console.log("Randomly spawned rainbow trail plane!");
+                    } else if (random < 1/20 + 1/40) { // Increased from 1/30 to 1/20
+                        this.trailType = 'repto';
+                        this.trailMultiplier = 2; // Double points
+                        this.trailMessage = "REPTO TRAIL BONUS";
+                    } else {
+                        this.trailType = 'normal';
+                        this.trailMultiplier = 1;
+                    }
+                }
+                
+                this.isCurved = Math.random() < 0.1;
+                this.t = 0;
+                this.loopCount = this.isCurved ? Math.floor(Math.random() * 2) + 1 : 0;
+                this.initPath();
+                this.lastTrail = { x: this.x, y: this.y };
+                this.frame = 0; // For rainbow animation
+                
+                // Track trail segments from this plane
+                this.trailSegmentCount = 0;
+            }
+            initPath() {
+                const speedFactor = this.type === 'stealth' ? Math.random() * 3 + 2 : Math.random() * 2 + 1;
+                if (this.isCurved) {
+                    this.fromLeft = Math.random() < 0.5;
+                    this.x = this.fromLeft ? -50 : canvas.width + 50;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.startX = this.x;
+                    this.startY = this.y;
+                    this.targetX = this.fromLeft ? canvas.width + 50 : -50;
+                    this.amplitude = canvas.height * 0.3;
+                    this.frequency = this.loopCount * Math.PI * 2 / canvas.width;
+                } else {
+                    const isHorizontal = Math.random() < 0.8;
+                    if (isHorizontal) {
+                        const fromLeft = Math.random() < 0.5;
+                        this.x = fromLeft ? -50 : canvas.width + 50;
+                        this.y = Math.random() < 0.9 ? Math.random() * (canvas.height * 0.66) : canvas.height * 0.66 + Math.random() * (canvas.height * 0.34);
+                        const targetX = fromLeft ? canvas.width : 0;
+                        const targetY = Math.random() * canvas.height;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    } else {
+                        const fromTop = Math.random() < 0.5;
+                        this.x = Math.random() * canvas.width;
+                        this.y = fromTop ? -50 : canvas.height + 50;
+                        const targetY = fromTop ? canvas.height : 0;
+                        const targetX = Math.random() * canvas.width;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    }
+                }
+            }
+            update() {
+                if (this.isCurved) {
+                    this.t += this.fromLeft ? this.tIncrement : -this.tIncrement;
+                    const prevX = this.x;
+                    const prevY = this.y;
+                    this.x = this.startX + this.t;
+                    this.y = this.startY + Math.sin(this.t * this.frequency) * this.amplitude;
+                    this.dx = this.x - prevX;
+                    this.dy = this.y - prevY;
+                } else {
+                    this.x += this.dx;
+                    this.y += this.dy;
+                }
+                
+                const angle = Math.atan2(this.dy, this.dx);
+                const width = 75.3 * this.sizeFactor / 2;
+                const height = 32.1 * this.sizeFactor / 2;
+                
+                const offsetX = -Math.cos(angle) * width * 0.9;
+                // Make the Y offset scale with plane size by using a percentage of height instead of fixed +5 value
+                const offsetY = -Math.sin(angle) * width * 0.9 + (height * 0.3); // 30% of height instead of fixed +5
+                
+                if (Math.hypot(this.x - this.lastTrail.x, this.y - this.lastTrail.y) > 5) {
+                    chemtrails.push({ 
+                        x1: this.lastTrail.x, 
+                        y1: this.lastTrail.y, 
+                        x2: this.x + offsetX, 
+                        y2: this.y + offsetY, 
+                        opacity: this.opacity, 
+                        lineWidth: this.lineWidth, 
+                        points: this.points,
+                        trailType: this.trailType,
+                        trailMultiplier: this.trailMultiplier,
+                        trailMessage: this.trailMessage,
+                        frame: this.frame,
+                        planeId: this.id,
+                        // Add a unique segment ID for tracking individual segments
+                        segmentId: this.id + '_' + this.trailSegmentCount,
+                        // Track if the plane is still active
+                        planeActive: true
+                    });
+                    
+                    // Increment trail segment count for this plane
+                    this.trailSegmentCount++;
+                    
+                    // Update trail counters for special trails
+                    if (this.trailType === 'repto') {
+                        reptoTrailsExist = true;
+                        reptoTrailsCount++;
+                    } else if (this.trailType === 'rainbow') {
+                        rainbowTrailsExist = true;
+                        rainbowTrailsCount++;
+                    }
+                    
+                    // Create spray particles where the trail leaves the plane
+                    // Use a consistent angle calculation that works for both directions
+                    const trailAngle = Math.atan2(offsetY, offsetX);
+                    
+                    // Create more particles based on plane size for a denser effect
+                    const particleCount = Math.min(5, Math.max(2, Math.floor(this.lineWidth * 1.2))); // Increased count
+                    
+                    // Determine if the plane is flying right (dx > 0) or left (dx < 0)
+                    const isFlyingRight = this.dx > 0;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        sprayParticles.push(new SprayParticle(
+                            this.x + offsetX, 
+                            this.y + offsetY, 
+                            trailAngle, 
+                            this.opacity * 0.8 + 0.2, // Slightly higher opacity for better visibility
+                            this.lineWidth, // Pass the line width to scale particles appropriately
+                            isFlyingRight, // This parameter is maintained for backward compatibility but no longer affects the angle
+                            this.sizeFactor, // Pass the plane's size factor for consistent positioning
+                            this.trailType // Pass trail type for spray particles
+                        ));
+                    }
+                    
+                    this.lastTrail = { x: this.x + offsetX, y: this.y + offsetY };
+                    // Increment frame for rainbow animation
+                    this.frame = (this.frame + 1) % 60;
+                }
+                
+                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                    // Mark all chemtrails from this plane as having an inactive plane
+                    chemtrails.forEach(trail => {
+                        if (trail.planeId === this.id) {
+                            trail.planeActive = false;
+                        }
+                    });
+                    
+                    planes = planes.filter(p => p !== this);
+                    if (this === targetPlane) {
+                        targetPlane = null;
+                        targetMode = false;
+                        shotCount = 0;
+                        shots = [];
+                        shotCooldown = 0;
+                    }
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.atan2(this.dy, this.dx));
+                const width = 75.3 * this.sizeFactor;
+                const height = 32.1 * this.sizeFactor;
+                
+                let img;
+                let flipHorizontal = false;
+                let flipVertical = false;
+                if (schwabMode) {
+                    // When in Schwab mode, use the Schwab image
+                    img = schwabImg;
+                    // Determine flip direction based on movement
+                    flipHorizontal = this.isCurved ? !this.fromLeft : this.dx < 0;
+                    flipVertical = this.isCurved ? !this.fromLeft : this.dx < 0;
+                } else if (this.isCurved) {
+                    img = this.fromLeft ? planeImg : planerImg;
+                    flipHorizontal = !this.fromLeft;
+                    flipVertical = !this.fromLeft;
+                } else {
+                    img = this.dx > 0 ? planeImg : planerImg;
+                    flipHorizontal = this.dx < 0;
+                    flipVertical = this.dx < 0;
+                }
+                
+                if (img.complete && img.naturalWidth) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    if (flipHorizontal || flipVertical) {
+                        tempCtx.translate(flipHorizontal ? width : 0, flipVertical ? height : 0);
+                        tempCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+                    }
+                    
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    
+                    // Only apply black fill for regular planes, not for Schwab mode
+                    if (!schwabMode) {
+                        tempCtx.globalCompositeOperation = 'source-in';
+                        tempCtx.fillStyle = isInverted ? '#fff' : '#000'; // Invert color in onyx mode
+                        tempCtx.fillRect(0, 0, width, height);
+                    }
+                    
+                    // Apply invert filter in onyx mode for Schwab image
+                    if (isInverted && schwabMode) {
+                        ctx.filter = 'invert(100%)';
+                    }
+                    
+                    ctx.drawImage(tempCanvas, -width / 2, -height / 2, width, height);
+                } else {
+                    ctx.fillStyle = isInverted ? '#fff' : '#000'; // Invert color in onyx mode
+                    ctx.fillRect(-width / 2, -height / 2, width, height);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        class Shot {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.speed = 10;
+                const angle = Math.atan2(targetY - y, targetX - x);
+                this.dx = Math.cos(angle) * this.speed;
+                this.dy = Math.sin(angle) * this.speed;
+                this.size = 5;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                if (targetPlane && Math.hypot(this.x - targetPlane.x, this.y - targetPlane.y) < 30) { // Increased hit radius from 20 to 30
+                    // Only count the shot if this is the first projectile to hit in this volley
+                    const isFirstHit = shots.indexOf(this) === 0;
+                    if (isFirstHit) {
+                        shotCount++;
+                        console.log("Shot hit! Count:", shotCount);
+                        
+                        // Remove hit indicator creation - no longer needed
+                        // hitIndicators.push(new HitIndicator(targetPlane.x, targetPlane.y, 25));
+                    }
+                    
+                    shots = shots.filter(s => s !== this);
+                    
+                    // For level 2 (1 Shot), destroy the plane immediately with one hit
+                    if (shootLevel >= 2) {
+                        shotCount = 999; // Set to a high number to ensure it exceeds any required shots
+                    }
+                    
+                    // Determine required shots based on plane size
+                    let requiredShots = 5; // Default for small planes
+                    
+                    if (targetPlane.sizeFactor >= 2.5) { // Changed from exact match to >= for more reliability
+                        requiredShots = 15; // Big planes (sizeFactor 2.5 or larger)
+                        console.log("Big plane detected. Required shots:", requiredShots);
+                    } else if (targetPlane.sizeFactor >= 0.5) {
+                        requiredShots = 10; // Medium planes
+                        console.log("Medium plane detected. Required shots:", requiredShots);
+                    }
+                    
+                    console.log(`Current shots: ${shotCount}/${requiredShots}`);
+                    
+                    if (shotCount >= requiredShots) {
+                        console.log("ENOUGH SHOTS! Destroying plane now!");
+                        // Store the position of the exploding target
+                        targetPosition.x = targetPlane.x;
+                        targetPosition.y = targetPlane.y;
+                        
+                        // Set flag to keep target cursor visible during explosion
+                        targetRemaining = true;
+                        
+                        // Mark all chemtrails from this plane as having an inactive plane
+                        chemtrails.forEach(trail => {
+                            if (trail.planeId === targetPlane.id) {
+                                trail.planeActive = false;
+                            }
+                        });
+                        
+                        // Only create falling plane effect in star mode
+                        // In normal mode, just create an explosion
+                        if (starTimer > 0) {
+                            fallingPlanes.push(new FallingPlane(targetPlane));
+                        }
+                        
+                        explosions.push(new Explosion(targetPlane.x, targetPlane.y, targetPlane.sizeFactor));
+                        if (soundEnabled) {
+                            try { explodeSound.play(); } catch (e) { console.log("Explode sound failed:", e); }
+                        }
+                        
+                        // Add score based on plane type and size
+                        const planeScore = targetPlane.points * 100;
+                        score += planeScore;
+                        totalScore += planeScore; // Update total score
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        updateUpgrades();
+                        
+                        // Create a twinkle effect to show the score
+                        twinkleEffects.push(new Twinkle(targetPlane.x, targetPlane.y, `+${planeScore}`));
+                        
+                        // Handle combo system
+                        const currentTime = gameTime;
+                        const timeSinceLast = currentTime - lastPlaneExplodeTime;
+                        console.log("Plane destroyed! Combo count:", comboCount);
+                        
+                        // Always increment combo count regardless of time passed
+                        comboCount++;
+                        console.log("Combo incremented to:", comboCount);
+                        if (comboCount >= 5) {
+                            console.log("Combo 5 achieved!");
+                            const comboBonus = 5000;
+                            score += comboBonus;
+                            totalScore += comboBonus; // Update total score
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            
+                            // Force a new center message for combo with more visibility
+                            const comboMsg = new CenterMessage(`NICE COMBO! +${comboBonus}`, '#ffffff', 40, 180);
+                            messages = messages.filter(m => !(m instanceof CenterMessage && m.text.includes("COMBO"))); // Remove any existing combo messages
+                            messages.push(comboMsg);
+                            console.log("Added combo message to messages array. Current messages:", messages.length);
+                            
+                            // Force immediate display of the message
+                            comboMsg.draw();
+                            
+                            comboCount = 0; // Reset after awarding bonus
+                        }
+                        
+                        lastPlaneExplodeTime = currentTime; // Keep tracking time for debugging purposes
+                        
+                        // Remove the plane but keep targeting mode active until explosion ends
+                        planes = planes.filter(p => p !== targetPlane);
+                        console.log("Plane destroyed! Remaining planes:", planes.length, "Combo:", comboCount);
+                        targetPlane = null;
+                        shots = [];
+                        shotCount = 0;
+                        shotCooldown = 0;
+                    }
+                }
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    shots = shots.filter(s => s !== this);
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = isInverted ? '#000' : '#fff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Explosion {
+            constructor(x, y, sizeFactor = 1) {
+                this.x = x;
+                this.y = y;
+                this.frame = 0;
+                this.maxFrames = explosionFrames.length;
+                this.life = this.maxFrames * 2;
+                this.size = 100 * explosionSizeFactor * sizeFactor;
+                this.isLastExplosion = true;
+            }
+            update() {
+                this.life--;
+                this.frame = Math.floor((this.maxFrames - 1) * (1 - this.life / (this.maxFrames * 2)));
+                if (this.frame >= this.maxFrames) this.frame = this.maxFrames - 1;
+                
+                if (this.life <= 0 && this.isLastExplosion && targetRemaining) {
+                    targetRemaining = false;
+                    targetMode = false;
+                }
+            }
+            draw() {
+                const img = explosionFrames[this.frame];
+                if (img.complete && img.naturalWidth) {
+                    ctx.save();
+                    if (isInverted) ctx.filter = 'invert(1)';
+                    ctx.translate(this.x, this.y);
+                    ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
+                    ctx.restore();
+                }
+            }
+        }
+
+        // FallingPlane class for star mode plane destruction effect
+        class FallingPlane {
+            constructor(plane) {
+                // Copy position and appearance from original plane
+                this.x = plane.x;
+                this.y = plane.y;
+                this.sizeFactor = plane.sizeFactor;
+                
+                // Copy all special image properties
+                this.isSchwab = schwabMode; // Use global schwabMode flag
+                this.type = plane.type;
+                this.isCurved = plane.isCurved;
+                this.fromLeft = plane.fromLeft;
+                this.dx = plane.dx > 0 ? 1 : -1; // Direction for image flipping
+                
+                // Initialize falling motion properties
+                this.fallingSpeed = 1.5;  // Initial falling speed
+                this.acceleration = 0.2;  // Gravity acceleration effect
+                this.rotation = 0;        // Current rotation angle
+                this.rotationSpeed = (Math.random() * 0.2) - 0.1; // Random rotation (left or right)
+                this.swingOffset = 0;      // Side-to-side movement offset
+                this.swingSpeed = (Math.random() * 0.8) + 0.2; // Speed of side-to-side swing
+                this.swingDirection = Math.random() > 0.5 ? 1 : -1; // Random initial swing direction
+                this.swingAmount = Math.random() * 6; // Maximum amount of side-to-side swing
+                
+                // Track lifespan
+                this.life = 120; // Frames before disappearing
+            }
+            
+            update() {
+                // Update vertical position with acceleration
+                this.fallingSpeed += this.acceleration;
+                this.y += this.fallingSpeed;
+                
+                // Update rotation
+                this.rotation += this.rotationSpeed;
+                
+                // Update side-to-side swing motion (pendulum effect)
+                this.swingOffset = Math.sin(this.swingSpeed * (this.life / 10)) * this.swingAmount * this.swingDirection;
+                this.x += this.swingOffset / 5; // Apply a portion of the swing each frame
+                
+                // Reduce life counter
+                this.life--;
+                
+                // Return true if still active, false if it should be removed
+                return this.life > 0 && this.y < canvas.height + 100;
+            }
+            
+            draw() {
+                // Calculate image dimensions
+                const width = 75.3 * this.sizeFactor;
+                const height = 32.1 * this.sizeFactor;
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation); // Apply rotation
+                
+                // Choose the correct image based on direction and type
+                let img;
+                let flipHorizontal = false;
+                let flipVertical = false;
+                
+                if (this.isSchwab) {
+                    // When in Schwab mode, use the Schwab image
+                    img = schwabImg;
+                    // Determine flip direction based on movement
+                    flipHorizontal = this.isCurved ? !this.fromLeft : this.dx < 0;
+                    flipVertical = this.isCurved ? !this.fromLeft : this.dx < 0;
+                } else if (this.isCurved) {
+                    img = this.fromLeft ? planeImg : planerImg;
+                    flipHorizontal = !this.fromLeft;
+                    flipVertical = !this.fromLeft;
+                } else {
+                    img = this.dx > 0 ? planeImg : planerImg;
+                    flipHorizontal = this.dx < 0;
+                    flipVertical = this.dx < 0;
+                }
+                
+                if (img.complete && img.naturalWidth) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    if (flipHorizontal || flipVertical) {
+                        tempCtx.translate(flipHorizontal ? width : 0, flipVertical ? height : 0);
+                        tempCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+                    }
+                    
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    
+                    // Only apply black fill for regular planes, not for Schwab mode
+                    if (!this.isSchwab) {
+                        tempCtx.globalCompositeOperation = 'source-in';
+                        tempCtx.fillStyle = isInverted ? '#fff' : '#000'; // Invert color in onyx mode
+                        tempCtx.fillRect(0, 0, width, height);
+                    }
+                    
+                    // Apply invert filter in onyx mode for Schwab image
+                    if (isInverted && this.isSchwab) {
+                        ctx.filter = 'invert(100%)';
+                    }
+                    
+                    ctx.drawImage(tempCanvas, -width / 2, -height / 2, width, height);
+                } else {
+                    ctx.fillStyle = isInverted ? '#fff' : '#000'; // Invert color in onyx mode
+                    ctx.fillRect(-width / 2, -height / 2, width, height);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        class PowerUp {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.size = 20;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.angle = 0;
+                this.particles = [];
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.angle += 0.1;
+                if (Math.random() < 0.05 && this.particles.length < 5) {
+                    this.particles.push({ x: 0, y: 0, size: Math.random() * 5 + 2, life: 15 });
+                }
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.life--;
+                    p.size = Math.max(0, p.size - 0.2);
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                }
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    collectibles = collectibles.filter(c => c !== this);
+                }
+            }
+            drawParticles() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                this.particles.forEach(p => {
+                    if (p.size > 0) {
+                        ctx.fillStyle = `rgba(255, 255, ${this.type === 'star' ? 0 : 255}, ${p.life / 15})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x + (Math.random() - 0.5) * 10, p.y + (Math.random() - 0.5) * 10, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.restore();
+            }
+        }
+
+        class CoinPowerUp extends PowerUp {
+            constructor(x, y) { super('coin', x, y); }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size / 2);
+                gradient.addColorStop(0, isInverted ? '#0028ff' : '#ffd700');
+                gradient.addColorStop(1, isInverted ? '#001466' : '#c0c0c0');
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class StarPowerUp extends PowerUp {
+            constructor(x, y) { super('star', x, y); }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#ff0000' : '#00ffff';
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                    const outerX = Math.cos(angle) * this.size / 2;
+                    const outerY = Math.sin(angle) * this.size / 2;
+                    const innerX = Math.cos(angle + 2 * Math.PI / 5) * this.size / 4;
+                    const innerY = Math.sin(angle + 2 * Math.PI / 5) * this.size / 4;
+                    if (i === 0) ctx.moveTo(outerX, outerY);
+                    else ctx.lineTo(outerX, outerY);
+                    ctx.lineTo(innerX, innerY);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class OnyxPowerUp extends PowerUp {
+            constructor(x, y) { super('onyx', x, y); }
+            draw() {
+                const pulse = Math.sin(gameTime * 0.1) * 2 + this.size / 2;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#fff' : '#000';
+                ctx.beginPath();
+                ctx.moveTo(0, -pulse);
+                ctx.lineTo(pulse / 1.5, 0);
+                ctx.lineTo(0, pulse);
+                ctx.lineTo(-pulse / 1.5, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 1;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.life = 20;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.life--;
+            }
+            draw() {
+                ctx.fillStyle = isInverted ? '#000' : `rgba(255, 255, 255, ${this.life / 20})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class SprayParticle {
+            constructor(x, y, angle, opacity = 0.5, lineWidth = 2, isFlying_right = true, sizeFactor = 1, trailType = 'normal') {
+                // Get the direction vector from the angle (direction of the trail)
+                const dirX = Math.cos(angle);
+                const dirY = Math.sin(angle);
+                
+                // Calculate a consistent plane-size-relative offset
+                // This ensures all planes (small or large) have their spray at the same relative position
+                // Use the plane's size factor to scale the base position
+                const planeLength = 75.3 * sizeFactor; // Same calculation used for plane width
+                
+                // Base offset is now a percentage of the plane's length
+                // This makes the position consistent across all plane sizes
+                const baseOffsetPercentage = 0.05; // 5% of plane length (reduced from 15% to bring particles closer)
+                const baseOffset = planeLength * baseOffsetPercentage;
+                
+                // Apply the global offset control
+                // Positive SPRAY_OFFSET moves particles further away (trailing behind)
+                // Negative SPRAY_OFFSET moves particles closer to the plane
+                const adjustedOffset = baseOffset + (SPRAY_OFFSET * planeLength * 0.1);
+                
+                // Add a small random variation for natural appearance
+                const randomVariation = Math.random() * (planeLength * 0.05);
+                const offsetMagnitude = adjustedOffset + randomVariation;
+                
+                // Apply offset without directional multiplier to ensure identical offset distances
+                // for both left-flying and right-flying planes
+                this.x = x + dirX * offsetMagnitude;
+                this.y = y + dirY * offsetMagnitude;
+                
+                // Add perpendicular spread for more natural appearance
+                // Scale perpendicular spread to plane size as well
+                const perpX = -dirY; // Perpendicular to direction
+                const perpY = dirX;
+                const perpScale = planeLength * 0.02; // 2% of plane length for perpendicular spread (reduced from 4%)
+                const perpOffset = (Math.random() - 0.5) * perpScale;
+                // Perpendicular offset isn't affected by direction
+                this.x += perpX * perpOffset;
+                this.y += perpY * perpOffset;
+                
+                // UPDATED FIX: Use the original angle with no modification
+                // This will make particles flow in the same direction as the plane movement
+                const particleAngle = angle;
+                
+                // Add randomness to the angle for natural dispersion
+                const spreadAngleVariation = (Math.random() - 0.5) * 0.8;
+                const spreadAngle = particleAngle + spreadAngleVariation;
+                
+                // More varied speeds for natural particle behavior
+                // Scale speed based on plane size for consistent visual effect
+                const baseSpeed = 1.5 + Math.random() * 2.5;
+                const speed = baseSpeed * (sizeFactor * 0.5 + 0.5); // Scale with plane size but don't make too extreme
+                
+                // Calculate movement vector in the same direction as the plane
+                this.dx = Math.cos(spreadAngle) * speed;
+                this.dy = Math.sin(spreadAngle) * speed;
+                
+                // Slightly bigger particles for better visibility when behind the plane
+                // Scale particle size relative to plane size but within a reasonable range
+                const sizeScale = 0.5 + Math.random() * 0.3; // 50-80% of line width
+                this.size = Math.max(2.0, lineWidth * sizeScale);
+                
+                // Slightly longer lifespan for better visibility
+                // Scale lifespan with plane size for consistent trail length
+                const lifespanScale = 0.8 + (sizeFactor * 0.2); // Larger planes get slightly longer trails
+                this.maxLife = (12 + Math.random() * 8) * lifespanScale;
+                this.life = this.maxLife;
+                
+                // Increased opacity for better visibility when behind the plane
+                this.opacity = opacity * 1.2;
+                
+                // Add drift for natural movement matching particle direction
+                this.drift = (Math.random() - 0.5) * 0.3 * sizeFactor;
+                
+                // Add trail type
+                this.trailType = trailType;
+            }
+            
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                // Add slight drift to x movement for more natural flow
+                this.x += this.drift;
+                this.life--;
+                
+                // More gradual size reduction
+                this.size = Math.max(0.2, this.size * 0.96);
+            }
+            
+            draw() {
+                // Higher opacity at the beginning for better visibility behind plane
+                const fadeInFactor = this.life > this.maxLife * 0.8 ? 1.2 : 1.0;
+                const alpha = (this.life / this.maxLife) * this.opacity * fadeInFactor;
+                
+                // Set color based on trail type
+                let color;
+                if (this.trailType === 'repto') {
+                    color = `rgba(57, 255, 20, ${alpha})`; // Neon green
+                } else if (this.trailType === 'rainbow') {
+                    // Rainbow color cycling
+                    const hue = (gameTime * 5 + this.x % 360) % 360;
+                    color = `hsla(${hue}, 100%, 60%, ${alpha})`;
+                } else {
+                    // Default white or black based on inversion
+                    color = isInverted ? 
+                        `rgba(0, 0, 0, ${alpha})` : 
+                        `rgba(255, 255, 255, ${alpha})`;
+                }
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Twinkle {
+            constructor(x, y, text) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.life = 30;
+                this.size = 10;
+            }
+            update() {
+                this.life--;
+                this.size += 1;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.life / 30})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                if (this.text) {
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = `rgba(255, 255, 0, ${this.life / 30})`;
+                    ctx.fillText(this.text, this.x + 10, this.y - 10);
+                }
+                ctx.restore();
+            }
+        }
+
+        class ShootFlash {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.life = 10;
+                this.size = 40;
+            }
+            update() {
+                this.life--;
+                this.size += 5;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.life / 10})`);
+                gradient.addColorStop(0.3, `rgba(255, 255, 220, ${this.life / 12})`);
+                gradient.addColorStop(0.6, `rgba(255, 250, 180, ${this.life / 15})`);
+                gradient.addColorStop(1, 'rgba(255, 230, 100, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Message {
+            constructor(text, x, y, color = '#fff', size = 16, duration = 60) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = size;
+                this.life = duration;
+                this.maxLife = duration;
+                this.dy = -1; // Move upward
+            }
+            
+            update() {
+                this.life--;
+                this.y += this.dy;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.font = `bold ${this.size}px Arial`;
+                ctx.fillStyle = `rgba(0, 0, 0, 0.7)`;
+                ctx.fillText(this.text, this.x + 2, this.y + 2);
+                ctx.fillStyle = `rgba(${this.color.replace('#', '').match(/../g).map(h => parseInt(h, 16)).join(', ')}, ${this.life / this.maxLife})`;
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        // Message class for displaying center screen messages
+        class CenterMessage extends Message {
+            constructor(text, color = '#ffffff', size = 30, duration = 120) { // Reduced duration from 180 to 120
+                // Convert text to uppercase for retro style
+                super(text.toUpperCase(), 0, 0, color, size, duration);
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.originalSize = size; // Use the provided size parameter
+                this.scale = 1.0; // Start at full size to avoid scaling animation
+                this.maxScale = 1.0; // Keep scale consistent
+                this.scaleDirection = 0; // No scaling animation
+                this.colorCycle = 0; // For color cycling effect
+                
+                // Track creation time for ordering
+                this.creationTime = Date.now();
+                
+                // Add a debug log to confirm message creation
+                console.log("Created center message:", text, "- Will display at", this.x, this.y);
+            }
+            
+            update() {
+                this.life--;
+                // Remove color cycling and scaling animation to keep consistent appearance
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                // Remove scaling to keep consistent size
+                
+                // Text with pixel font effect
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Use Visitor font with fallbacks
+                ctx.font = `bold ${this.originalSize}px "Visitor", "Press Start 2P", monospace`;
+                
+                // Faster fade out - use a steeper curve for opacity
+                const opacity = Math.min(1, this.life / (this.maxLife * 0.3)); // Even faster fade out
+                
+                // Use the provided color instead of rainbow effect for consistency
+                // Convert hex color to RGB for opacity support
+                const r = parseInt(this.color.slice(1, 3), 16);
+                const g = parseInt(this.color.slice(3, 5), 16);
+                const b = parseInt(this.color.slice(5, 7), 16);
+                
+                // 3D effect with pixel-like steps
+                for (let i = 3; i > 0; i--) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * opacity})`;
+                    ctx.fillText(this.text, i, i); // Shadow offset
+                }
+                
+                // Main text with the message's color
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                ctx.fillText(this.text, 0, 0);
+                
+                ctx.restore();
+            }
+        }
+        
+        // HitIndicator class for visual feedback when shots hit planes
+        class HitIndicator {
+            constructor(x, y, size = 20) {
+                this.x = x;
+                this.y = y;
+                this.life = 20;
+                this.size = size;
+                this.color = '#ffff00';
+            }
+            
+            update() {
+                this.life--;
+            }
+            
+            draw() {
+                const alpha = this.life / 20;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.size/2, this.y);
+                ctx.lineTo(this.x + this.size/2, this.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - this.size/2);
+                ctx.lineTo(this.x, this.y + this.size/2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function generateCityscape() {
+            const buildingCount = Math.ceil(canvas.width / 100) + 5;
+            cityFront = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 100,
+                width: Math.random() * 80 + 20,
+                height: Math.random() * 100 + 50
+            }));
+            cityMid = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 120,
+                width: Math.random() * 100 + 30,
+                height: Math.random() * 80 + 30
+            }));
+            cityFar = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 150,
+                width: Math.random() * 120 + 40,
+                height: Math.random() * 60 + 20
+            }));
+        }
+
+        clouds = Array(8).fill().map(() => new Cloud());
+        generateCityscape();
+
+        // Create variables to track trail segments by plane
+        let planeTrailSegments = {};
+        let planeTrailsCleared = {};
+        
+        function startGame() {
+            console.log("Starting game...");
+            startScreen.style.opacity = '0';
+            setTimeout(() => startScreen.style.display = 'none', 500);
+            canvas.classList.add('active');
+            // Remove any blur effect from previous game over
+            canvas.style.filter = 'none';
+            scoreDisplay.style.display = 'block';
+            upgradesDiv.style.display = 'flex';
+            cheatcodeInput.style.display = 'block';
+            soundToggle.style.display = 'flex';
+            gameOverDiv.style.display = 'none';
+
+            // Reset all game variables
+            gameStarted = true;
+            gameOver = false;
+            gameTime = 0;
+            score = 0;
+            totalScore = 0; // Track total points collected during the game
+            cheatPoints = 0; // Track points gained through cheatcodes
+            sizeLevel = 0;
+            styleLevel = 0;
+            shootLevel = 0;
+            starTimer = 0;
+            onyxTimer = 0;
+            venomMode = false; // Reset venom mode
+            onyxTextX = canvas.width;
+            isInverted = false;
+            mouseX = -100;
+            mouseY = -100;
+            targetMode = false;
+            targetPlane = null;
+            targetRemaining = false;
+            targetPosition = { x: 0, y: 0 };
+            shots = [];
+            shotCount = 0;
+            shotCooldown = 0;
+            isMouseDown = false;
+            chemtrails = [];
+            planes = [];
+            if (Math.random() > 0.5) planes.push(new Plane());
+            particles = [];
+            collectibles = [];
+            twinkleEffects = [];
+            explosions = [];
+            messages = [];
+            comboCount = 0;
+            lastPlaneExplodeTime = 0;
+            skyCleanMessageShown = false; // Make sure this is reset when starting a new game
+            gameHasStarted = false;
+            schwabMode = false;
+            sprayParticles = [];
+            hitIndicators = []; // Array for hit indicators
+            
+            // Reset cheat code input
+            cheatsInput = '';
+            cheatcodeInput.value = '';
+            cheatcodeInput.placeholder = 'CHEAT';
+            
+            soundEnabled = true;
+            slowMode = false; // Reset slow mode when starting a new game
+            nextPlaneSpawn = 0; // Reset plane spawn timer
+            lastPowerupTime = 0; // Reset powerup spawn timer
+
+            // Reset special trail tracking
+            reptoTrailsExist = false;
+            rainbowTrailsExist = false;
+            reptoTrailsCount = 0;
+            rainbowTrailsCount = 0;
+            reptoTrailsCleared = false;
+            rainbowTrailsCleared = false;
+
+            // Reset trail tracking
+            planeTrailSegments = {};
+            planeTrailsCleared = {};
+
+            // Set initial sound button state
+            soundToggle.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+                    <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            `;
+
+            try {
+                // Reset and restart music properly
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                music.currentTime = 0;
+                schwurblerMusic.currentTime = 0;
+                skyMusic.currentTime = 0;
+                
+                scoreDisplay.textContent = `Score: ${score}`;
+                updateUpgrades();
+                if (soundEnabled) {
+                    playMusic(music); // Use our new function
+                    twinkleSound.play();
+                }
+            } catch (e) {
+                console.error("Error during game start:", e);
+            }
+        }
+
+        // Add a function to ensure only one music track plays at a time
+        function playMusic(musicTrack) {
+            if (!soundEnabled) return;
+            
+            // Pause all music tracks first
+            music.pause();
+            schwurblerMusic.pause();
+            skyMusic.pause();
+            ownMusic.pause();
+            
+            // Play the requested track
+            try {
+                musicTrack.currentTime = 0;
+                musicTrack.play().catch(e => console.log("Music play failed:", e));
+            } catch (e) {
+                console.log("Music play failed:", e);
+            }
+        }
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+                        ownMusic.onended = function() {
+                            if (schwabMode && soundEnabled) { // Only if still in Schwab mode and sound enabled
+                                playMusic(music);
+                            }
+                        };
+                    } else {
+                        playMusic(music);
+                    }
+                }
+            } else {
+                // Pause all music when sound is disabled
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                ownMusic.pause();
+            }
+        });
+        
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG color based on sound state
+            const paths = soundToggle.querySelectorAll('path');
+            paths.forEach(path => {
+                path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+            });
+            
+            if (soundEnabled) {
+                if (gameStarted && !gameOver) {
+                    // Determine which music should be playing based on game state
+                    if (schwabMode) {
+                        playMusic(ownMusic);
+                        
+                        // Set up event listener to play normal music when own.mp3 ends
+    </script>
+</body>
+</html>

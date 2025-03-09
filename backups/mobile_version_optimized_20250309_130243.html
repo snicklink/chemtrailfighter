@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- Additional meta tags for mobile optimization -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="format-detection" content="telephone=no">
+    <title>Chemtrail Fighter - Mobile</title>
+    <!-- 
+    MOBILE OPTIMIZATIONS:
+    1. Touch controls instead of mouse
+    2. Offset touch position to prevent finger obstruction
+    3. Larger UI elements for better touch targets
+    4. Forced landscape orientation
+    5. Optimized layout for mobile screens
+    -->
+    <!-- Add Visitor-like pixel font (Press Start 2P is the closest widely available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Visitor';
+            src: url('https://dl.dropboxusercontent.com/s/ecgr5oc2k3p9u36/visitor1.ttf?dl=0') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            touch-action: none; /* Prevent default touch actions */
+            /* Fix for iOS Safari's address bar */
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        /* Force landscape mode */
+        @media screen and (orientation: portrait) {
+            #orientation-message {
+                display: flex;
+            }
+            #game-container {
+                display: none;
+            }
+        }
+        
+        @media screen and (orientation: landscape) {
+            #orientation-message {
+                display: none;
+            }
+            #game-container {
+                display: block;
+            }
+        }
+        
+        #orientation-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            text-align: center;
+        }
+        
+        #orientation-message img {
+            width: 50%;
+            max-width: 200px;
+            margin-bottom: 20px;
+            animation: rotate 2s infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            100% { transform: rotate(90deg); }
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            /* Add background gradient as fallback */
+            background: linear-gradient(to bottom, #4d0e7e, #fd491e, #fed430);
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #start-products {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .product-link {
+            transition: transform 0.3s ease;
+            display: block;
+        }
+        .product-link:hover {
+            transform: scale(1.05);
+        }
+        .product-image {
+            height: 120px; /* Smaller for mobile */
+            border-radius: 5px;
+        }
+        #start-btn {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:active {
+            transform: scale(0.95);
+        }
+        #game-logo {
+            width: 250px; /* Smaller for mobile */
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+            /* Add this to ensure content fills the canvas */
+            object-fit: cover;
+            background: linear-gradient(to bottom, #4d0e7e, #fd491e, #fed430);
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 18px; /* Larger for mobile */
+            z-index: 5;
+        }
+        #sound-toggle {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 45px; /* Larger touch target */
+            height: 45px; /* Larger touch target */
+            background-color: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            z-index: 5;
+        }
+        #upgrades {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            padding: 10px 15px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid #444;
+            border-radius: 5px;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            min-width: 65px; /* Ensure enough touch area */
+            min-height: 45px; /* Larger touch target */
+        }
+        .upgrade-btn.active {
+            border-color: #ffcc00;
+            box-shadow: 0 0 10px #ffcc00;
+        }
+        .upgrade-container {
+            position: relative;
+            display: inline-block;
+        }
+        .upgrade-info {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 5px;
+            z-index: 10;
+        }
+        #cheatcode {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 100px;
+            height: 40px; /* Larger for mobile */
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            font-size: 16px; /* Larger for mobile */
+            text-transform: uppercase;
+            z-index: 5;
+        }
+        #cheatcode::placeholder {
+            color: #999; /* Lighter color for placeholder text */
+            opacity: 1; /* Ensure placeholder is visible */
+        }
+        /* Hide placeholder when user types */
+        #cheatcode:not(:placeholder-shown)::placeholder {
+            opacity: 0;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            z-index: 20;
+            pointer-events: auto; /* Ensure it captures touch events */
+        }
+        #game-over-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            max-width: 90%; /* Ensure it fits on mobile screens */
+        }
+        #game-over-text h1 {
+            font-size: 28px;
+            margin: 0 0 15px 0;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            color: #ff0000;
+        }
+        #game-over-text .points {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+        }
+        #game-over-text .message {
+            font-size: 18px;
+            margin: 0 0 20px 0;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            line-height: 1.4;
+        }
+        #play-again-btn {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+        }
+        #play-again-btn:active {
+            transform: scale(0.95);
+        }
+        .support-message {
+            font-size: 16px;
+            margin: 15px 0;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+        }
+        #bottom-products {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        #willy-ad {
+            max-width: 150px;
+        }
+        .music-credit {
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .music-credit a {
+            color: #ffcc00;
+            text-decoration: none;
+        }
+        
+        /* Mobile-specific touch indicators */
+        #touch-indicator {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Target reticle for better aiming */
+        #target-reticle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+            transform: translate(-50%, -120px); /* Position above finger */
+        }
+        
+        #target-reticle svg {
+            width: 100%;
+            height: 100%;
+            fill: rgba(255, 0, 0, 0.7);
+        }
+        
+        /* Touch control hint */
+        #touch-hint {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            font-size: 14px;
+            text-align: center;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        
+        /* Landscape warning */
+        #orientation-message {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="orientation-message">
+        <img src="./assets/rotate-phone.png" alt="Rotate Phone">
+        <p>Please rotate your device to landscape mode</p>
+    </div>
+
+    <div id="game-container">
+        <div id="start-screen">
+            <div id="start-container">
+                <div id="start-products">
+                    <a href="https://snicklink.myshopify.com/collections/chemtrail-fighter" target="_blank" class="product-link">
+                        <img src="./assets/hoodie.png" alt="Chemtrail Fighter Hoodie" class="product-image">
+                    </a>
+                    <img id="game-logo" src="./assets/gamelogo.png" alt="Game Logo">
+                    <a href="https://snicklink.myshopify.com/collections/chemtrail-fighter" target="_blank" class="product-link">
+                        <img src="./assets/tasse.png" alt="Chemtrail Fighter Mug" class="product-image">
+                    </a>
+                </div>
+                <button id="start-btn">Start</button>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <div id="score">Score: 0</div>
+        <button id="sound-toggle">
+            <svg width="25" height="25" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+                <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <div id="upgrades">
+            <button id="upgrade-size" class="upgrade-btn">Size</button>
+            <button id="upgrade-style" class="upgrade-btn">Style</button>
+            <button id="upgrade-shoot" class="upgrade-btn">???</button>
+        </div>
+        <input id="cheatcode" type="text" placeholder="CHEAT">
+        <div id="game-over">
+            <div id="game-over-container">
+                <img id="game-over-logo" src="./assets/gamelogo.png" alt="Game Logo" style="width: 250px; margin-bottom: 20px;">
+                <div id="game-over-text">
+                    <h1>GAME OVER</h1>
+                    <p class="points">Points: 0</p>
+                    <p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>
+                    <button id="play-again-btn">Play again</button>
+                </div>
+                <p class="support-message">Please support my work ❤️</p>
+                <div id="bottom-products">
+                    <a href="https://snicklink.myshopify.com/collections/chemtrail-fighter" target="_blank" class="product-link">
+                        <img src="./assets/hoodie.png" alt="Chemtrail Fighter Hoodie" class="product-image">
+                    </a>
+                    <a href="https://snicklink.de" target="_blank"><img id="willy-ad" src="./assets/willyad.png" alt="Willy Ad"></a>
+                    <a href="https://snicklink.myshopify.com/collections/chemtrail-fighter" target="_blank" class="product-link">
+                        <img src="./assets/tasse.png" alt="Chemtrail Fighter Mug" class="product-image">
+                    </a>
+                </div>
+                <div class="music-credit">
+                    <a href="https://www.youtube.com/watch?v=VtKvzC7sS2I" target="_blank">Song by Jeff Saxon</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile-specific elements -->
+        <div id="touch-indicator"></div>
+        <div id="target-reticle">
+            <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="white" stroke-width="5" fill="none" />
+                <line x1="20" y1="50" x2="80" y2="50" stroke="white" stroke-width="5" />
+                <line x1="50" y1="20" x2="50" y2="80" stroke="white" stroke-width="5" />
+            </svg>
+        </div>
+        <div id="touch-hint">Tap and move to clean trails<br>Tap planes to shoot</div>
+    </div>
+
+    <!-- Audio elements remain unchanged -->
+    <audio id="background-music" loop preload="auto">
+        <source src="./assets/wolken.mp3" type="audio/mp3">
+    </audio>
+    <audio id="schwurbler-music" preload="auto">
+        <source src="./assets/schwurbler.mp3" type="audio/mp3">
+    </audio>
+    <audio id="twinkle-sound" preload="auto">
+        <source src="./assets/twinkle.mp3" type="audio/mp3">
+    </audio>
+    <audio id="shot-sound" preload="auto">
+        <source src="./assets/shot.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explode-sound" preload="auto">
+        <source src="./assets/explode.mp3" type="audio/mp3">
+    </audio>
+    <audio id="sky-music" preload="auto">
+        <source src="./assets/sky.mp3" type="audio/mp3">
+    </audio>
+    <audio id="best-sound" preload="auto">
+        <source src="./assets/best.mp3" type="audio/mp3">
+    </audio>
+    <audio id="star-sound" preload="auto">
+        <source src="./assets/star.mp3" type="audio/mp3">
+    </audio>
+    <audio id="hover-sound" preload="auto">
+        <source src="./assets/hover.mp3" type="audio/mp3">
+    </audio>
+    <audio id="click-sound" preload="auto">
+        <source src="./assets/click.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill-sound" preload="auto">
+        <source src="./assets/kill.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill2-sound" preload="auto">
+        <source src="./assets/kill2.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill3-sound" preload="auto">
+        <source src="./assets/kill3.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill4-sound" preload="auto">
+        <source src="./assets/kill4.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill5-sound" preload="auto">
+        <source src="./assets/kill5.mp3" type="audio/mp3">
+    </audio>
+    <audio id="message-sound" preload="auto">
+        <source src="./assets/message.mp3" type="audio/mp3">
+    </audio>
+    <audio id="message2-sound" preload="auto">
+        <source src="./assets/message2.mp3" type="audio/mp3">
+    </audio>
+    <audio id="own-sound" preload="auto">
+        <source src="./assets/own.mp3" type="audio/mp3">
+    </audio>
+    <audio id="skull-sound" preload="auto">
+        <source src="./assets/skull.mp3" type="audio/mp3">
+    </audio>
+    <audio id="bonus-sound" preload="auto">
+        <source src="./assets/bonus.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        // Device detection and redirection
+        function isMobileDevice() {
+            return (window.innerWidth <= 1024) || 
+                   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Handle device detection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if we're on the wrong page for this device
+            if (!isMobileDevice() && window.location.href.indexOf('m_index.html') !== -1) {
+                // If desktop user is on mobile page, redirect to desktop version
+                window.location.href = 'index.html';
+            }
+            
+            // Check and monitor orientation
+            checkOrientation();
+            window.addEventListener('resize', checkOrientation);
+            
+            // Initialize touch controls after all assets are loaded
+            waitForAssets(initializeTouchControls);
+            
+            // Show touch hint after a short delay
+            setTimeout(function() {
+                const touchHint = document.getElementById('touch-hint');
+                if (touchHint) {
+                    touchHint.style.opacity = '1';
+                    // Hide the hint after 5 seconds
+                    setTimeout(function() {
+                        touchHint.style.opacity = '0';
+                    }, 5000);
+                }
+            }, 2000);
+        });
+
+        function checkOrientation() {
+            const orientationMessage = document.getElementById('orientation-message');
+            const gameContainer = document.getElementById('game-container');
+            
+            if (window.innerHeight > window.innerWidth) {
+                // Portrait mode
+                orientationMessage.style.display = 'flex';
+                if (gameContainer) gameContainer.style.display = 'none';
+            } else {
+                // Landscape mode
+                orientationMessage.style.display = 'none';
+                if (gameContainer) gameContainer.style.display = 'block';
+            }
+        }
+
+        function initializeTouchControls() {
+            const canvas = document.getElementById('game-canvas');
+            const touchIndicator = document.getElementById('touch-indicator');
+            const targetReticle = document.getElementById('target-reticle');
+            
+            if (!canvas || !touchIndicator || !targetReticle) {
+                console.error('Missing required DOM elements for touch controls');
+                return;
+            }
+            
+            // Initialize touch tracking variables
+            let touchX = -100;
+            let touchY = -100;
+            let isTouching = false;
+            
+            // Touch offset for better visibility (raise target above finger)
+            const touchOffsetY = -120; // Position target 120px above finger
+            
+            // Handler for touch start events
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // Prevent default behavior
+                
+                if (e.touches.length > 0) {
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    
+                    // Calculate touch position relative to canvas
+                    touchX = touch.clientX - rect.left;
+                    touchY = touch.clientY - rect.top;
+                    
+                    // Show touch indicator at finger position
+                    touchIndicator.style.display = 'block';
+                    touchIndicator.style.left = touchX + 'px';
+                    touchIndicator.style.top = touchY + 'px';
+                    
+                    // Show target reticle above finger
+                    targetReticle.style.display = 'block';
+                    targetReticle.style.left = touchX + 'px';
+                    targetReticle.style.top = (touchY + touchOffsetY) + 'px';
+                    
+                    // Set the touching flag to true
+                    isTouching = true;
+                    
+                    // Dispatch a simulated mouse event for the game engine
+                    simulateMouseEvent('mousedown', touchX, touchY + touchOffsetY);
+                }
+            }, { passive: false });
+            
+            // Handler for touch move events
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault(); // Prevent default behavior
+                
+                if (e.touches.length > 0 && isTouching) {
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    
+                    // Calculate touch position relative to canvas
+                    touchX = touch.clientX - rect.left;
+                    touchY = touch.clientY - rect.top;
+                    
+                    // Update touch indicator position
+                    touchIndicator.style.left = touchX + 'px';
+                    touchIndicator.style.top = touchY + 'px';
+                    
+                    // Update target reticle position (above finger)
+                    targetReticle.style.left = touchX + 'px';
+                    targetReticle.style.top = (touchY + touchOffsetY) + 'px';
+                    
+                    // Dispatch a simulated mouse event for the game engine
+                    simulateMouseEvent('mousemove', touchX, touchY + touchOffsetY);
+                }
+            }, { passive: false });
+            
+            // Handler for touch end events
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault(); // Prevent default behavior
+                
+                // Hide touch indicators when touch ends
+                touchIndicator.style.display = 'none';
+                targetReticle.style.display = 'none';
+                
+                // Set the touching flag to false
+                isTouching = false;
+                
+                // Dispatch a simulated mouse event for the game engine
+                simulateMouseEvent('mouseup', touchX, touchY + touchOffsetY);
+                simulateMouseEvent('mouseleave', touchX, touchY + touchOffsetY);
+            }, { passive: false });
+            
+            // Ensure touch controls work in the upgrade section
+            const upgradesDiv = document.getElementById('upgrades');
+            if (upgradesDiv) {
+                upgradesDiv.querySelectorAll('.upgrade-btn').forEach(btn => {
+                    btn.addEventListener('touchstart', function(e) {
+                        // Prevent default to avoid double-firing of events
+                        e.preventDefault();
+                        
+                        // Simulate click for the button
+                        this.click();
+                        
+                        // Add active effect to show touch
+                        this.classList.add('touch-active');
+                    }, { passive: false });
+                    
+                    btn.addEventListener('touchend', function() {
+                        // Remove active effect when touch ends
+                        this.classList.remove('touch-active');
+                    });
+                });
+            }
+            
+            // Add touch support for the cheat code input
+            const cheatcodeInput = document.getElementById('cheatcode');
+            if (cheatcodeInput) {
+                cheatcodeInput.addEventListener('touchstart', function(e) {
+                    // Don't prevent default here to allow input focus
+                    this.focus();
+                });
+            }
+            
+            console.log('Touch controls initialized successfully');
+        }
+
+        // Function to simulate mouse events from touch
+        function simulateMouseEvent(type, x, y) {
+            const canvas = document.getElementById('game-canvas');
+            if (!canvas) return;
+            
+            const evt = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: x + canvas.getBoundingClientRect().left,
+                clientY: y + canvas.getBoundingClientRect().top,
+                screenX: x + canvas.getBoundingClientRect().left,
+                screenY: y + canvas.getBoundingClientRect().top
+            });
+            
+            canvas.dispatchEvent(evt);
+        }
+        
+        // Function to wait for assets to load before initializing touch controls
+        function waitForAssets(callback) {
+            // Check if all important game elements are initialized
+            const importantElements = [
+                'game-canvas',
+                'start-btn',
+                'sound-toggle',
+                'upgrades',
+                'cheatcode',
+                'touch-indicator',
+                'target-reticle'
+            ];
+            
+            let allElementsFound = true;
+            for (const elementId of importantElements) {
+                if (!document.getElementById(elementId)) {
+                    allElementsFound = false;
+                    console.warn(`Missing element: ${elementId}`);
+                }
+            }
+            
+            if (allElementsFound) {
+                console.log('All required DOM elements found, initializing touch controls');
+                callback();
+            } else {
+                console.log('Waiting for DOM elements to load...');
+                setTimeout(() => waitForAssets(callback), 500);
+            }
+        }
+        
+        // Make sure to run the device detector on load
+        window.addEventListener('load', function() {
+            // Create rotate-phone image if missing
+            ensureRotatePhoneImage();
+        });
+
+        // Create rotate-phone image if it doesn't exist
+        function ensureRotatePhoneImage() {
+            // Check if the assets folder exists and the rotate-phone.png is present
+            const img = new Image();
+            img.onload = function() {
+                console.log('Rotate phone image exists');
+            };
+            img.onerror = function() {
+                console.warn('Rotate phone image not found, creating one dynamically');
+                createRotatePhoneImage();
+            };
+            img.src = './assets/rotate-phone.png';
+        }
+
+        // Create a dynamic rotate phone image
+        function createRotatePhoneImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw phone outline
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 5;
+            
+            // Phone body
+            ctx.beginPath();
+            ctx.roundRect(50, 30, 100, 160, 10);
+            ctx.stroke();
+            
+            // Screen
+            ctx.beginPath();
+            ctx.roundRect(60, 40, 80, 140, 5);
+            ctx.stroke();
+            
+            // Home button
+            ctx.beginPath();
+            ctx.arc(100, 190, 8, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Rotation arrow
+            ctx.beginPath();
+            ctx.moveTo(20, 100);
+            ctx.lineTo(40, 80);
+            ctx.lineTo(40, 120);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Save as data URL
+            const dataURL = canvas.toDataURL('image/png');
+            
+            // Use the dynamic image
+            const rotateImg = document.querySelector('#orientation-message img');
+            if (rotateImg) {
+                rotateImg.src = dataURL;
+            }
+        }
+
+        // Core game functionality for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            // Connect the start button to game initialization
+            const startBtn = document.getElementById('start-btn');
+            const canvas = document.getElementById('game-canvas');
+            const startScreen = document.getElementById('start-screen');
+            const scoreDisplay = document.getElementById('score');
+            const music = document.getElementById('background-music');
+            const soundToggle = document.getElementById('sound-toggle');
+            
+            if (startBtn) {
+                startBtn.addEventListener('click', startGame);
+                startBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    startGame();
+                }, { passive: false });
+                
+                console.log('Start button event listeners attached');
+            } else {
+                console.error('Start button not found');
+            }
+            
+            // Try to get the game in fullscreen mode
+            const gameContainer = document.getElementById('game-container');
+            if (gameContainer) {
+                // Add fullscreen button
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.id = 'fullscreen-toggle';
+                fullscreenBtn.innerHTML = '⛶';
+                fullscreenBtn.style.position = 'absolute';
+                fullscreenBtn.style.right = '60px';
+                fullscreenBtn.style.top = '10px';
+                fullscreenBtn.style.width = '45px';
+                fullscreenBtn.style.height = '45px';
+                fullscreenBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                fullscreenBtn.style.border = 'none';
+                fullscreenBtn.style.borderRadius = '50%';
+                fullscreenBtn.style.color = 'white';
+                fullscreenBtn.style.fontSize = '24px';
+                fullscreenBtn.style.display = 'flex';
+                fullscreenBtn.style.justifyContent = 'center';
+                fullscreenBtn.style.alignItems = 'center';
+                fullscreenBtn.style.zIndex = '5';
+                fullscreenBtn.style.cursor = 'pointer';
+                
+                gameContainer.appendChild(fullscreenBtn);
+                
+                fullscreenBtn.addEventListener('click', toggleFullscreen);
+                fullscreenBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }, { passive: false });
+            }
+            
+            // Basic game startup function
+            function startGame() {
+                console.log('Starting game...');
+                startScreen.style.opacity = '0';
+                setTimeout(() => startScreen.style.display = 'none', 500);
+                canvas.classList.add('active');
+                
+                // Remove any blur effect from previous game over
+                canvas.style.filter = 'none';
+                
+                // Show score and other UI elements
+                scoreDisplay.style.display = 'block';
+                
+                // Play background music if sound is enabled
+                try {
+                    if (!music.paused) {
+                        music.pause();
+                        music.currentTime = 0;
+                    }
+                    music.play().catch(e => console.log("Music failed to play:", e));
+                } catch (e) {
+                    console.error("Audio error:", e);
+                }
+                
+                // Request fullscreen for better experience on mobile
+                requestFullscreen();
+                
+                // Initialize canvas with sky background
+                initializeCanvas();
+            }
+            
+            // Function to toggle fullscreen
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+            
+            // Function to request fullscreen
+            function requestFullscreen() {
+                const body = document.documentElement;
+                
+                if (body.requestFullscreen) {
+                    body.requestFullscreen().catch(e => console.log("Fullscreen request failed:", e));
+                } else if (body.webkitRequestFullscreen) {
+                    body.webkitRequestFullscreen();
+                } else if (body.mozRequestFullScreen) {
+                    body.mozRequestFullScreen();
+                } else if (body.msRequestFullscreen) {
+                    body.msRequestFullscreen();
+                }
+            }
+            
+            // Initialize canvas with sky gradient
+            function initializeCanvas() {
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                
+                // Set canvas dimensions to match window
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                // Draw sky gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#4d0e7e'); // Deep purple at top
+                gradient.addColorStop(0.5, '#fd491e'); // Orange in middle
+                gradient.addColorStop(1, '#fed430'); // Yellow at bottom
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                console.log("Canvas initialized with sky background");
+                
+                // Initialize main game components
+                initializeGameCore();
+            }
+            
+            // Function to initialize the core game engine
+            function initializeGameCore() {
+                // Show UI elements that should be visible during gameplay
+                const upgradesDiv = document.getElementById('upgrades');
+                const cheatcodeInput = document.getElementById('cheatcode');
+                
+                if (upgradesDiv) upgradesDiv.style.display = 'flex';
+                if (cheatcodeInput) cheatcodeInput.style.display = 'block';
+                
+                // Create clouds and cityscape as background elements
+                createClouds();
+                
+                // Start the game loop
+                requestAnimationFrame(gameLoop);
+                
+                console.log("Game core initialized successfully");
+            }
+            
+            // Create cloud elements for background
+            function createClouds() {
+                const cloudCount = 8;
+                window.clouds = [];
+                
+                // Create cloud image objects
+                const cloudImg1 = new Image();
+                cloudImg1.src = './assets/cloud1.png';
+                const cloudImg2 = new Image();
+                cloudImg2.src = './assets/cloud2.png';
+                
+                const cloudImgs = [cloudImg1, cloudImg2];
+                
+                // Create cloud objects
+                for (let i = 0; i < cloudCount; i++) {
+                    const cloud = {
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * (canvas.height * 0.6),
+                        speed: Math.random() * 0.3 + 0.1,
+                        size: Math.random() * 0.4 + 0.3,
+                        img: cloudImgs[Math.floor(Math.random() * cloudImgs.length)]
+                    };
+                    window.clouds.push(cloud);
+                }
+            }
+            
+            // Main game loop
+            function gameLoop() {
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#4d0e7e'); // Deep purple at top
+                gradient.addColorStop(0.5, '#fd491e'); // Orange in middle
+                gradient.addColorStop(1, '#fed430'); // Yellow at bottom
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw clouds
+                if (window.clouds) {
+                    window.clouds.forEach(cloud => {
+                        // Update cloud position
+                        cloud.x -= cloud.speed;
+                        if (cloud.x + 200 < 0) {
+                            cloud.x = canvas.width;
+                            cloud.y = Math.random() * (canvas.height * 0.6);
+                        }
+                        
+                        // Draw cloud
+                        if (cloud.img.complete) {
+                            const width = 200 * cloud.size;
+                            const height = 100 * cloud.size;
+                            ctx.globalAlpha = 0.7;
+                            ctx.drawImage(cloud.img, cloud.x, cloud.y, width, height);
+                            ctx.globalAlpha = 1;
+                        }
+                    });
+                }
+                
+                // Draw cityscape at bottom
+                drawCityscape(ctx);
+                
+                // Continue the loop
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Draw city silhouette at bottom of screen
+            function drawCityscape(ctx) {
+                ctx.fillStyle = '#000'; // Black silhouette
+                
+                // Far buildings (smaller, slower)
+                const farBuildingCount = 15;
+                const farSpacing = canvas.width / farBuildingCount;
+                
+                for (let i = 0; i < farBuildingCount; i++) {
+                    const x = i * farSpacing;
+                    const width = farSpacing * 0.8;
+                    const height = 20 + Math.random() * 30;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+                
+                // Middle buildings
+                const midBuildingCount = 10;
+                const midSpacing = canvas.width / midBuildingCount;
+                
+                for (let i = 0; i < midBuildingCount; i++) {
+                    const x = i * midSpacing;
+                    const width = midSpacing * 0.7;
+                    const height = 30 + Math.random() * 40;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+                
+                // Front buildings (larger, faster)
+                const frontBuildingCount = 8;
+                const frontSpacing = canvas.width / frontBuildingCount;
+                
+                for (let i = 0; i < frontBuildingCount; i++) {
+                    const x = i * frontSpacing;
+                    const width = frontSpacing * 0.6;
+                    const height = 50 + Math.random() * 60;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Also check orientation
+                checkOrientation();
+                
+                // Update canvas dimensions
+                if (canvas && canvas.classList.contains('active')) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    
+                    // Redraw background
+                    initializeCanvas();
+                }
+            });
+            
+            // Sound toggle functionality
+            if (soundToggle) {
+                let soundEnabled = true;
+                
+                soundToggle.addEventListener('click', toggleSound);
+                soundToggle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleSound();
+                }, { passive: false });
+                
+                function toggleSound() {
+                    soundEnabled = !soundEnabled;
+                    
+                    // Update SVG color based on sound state
+                    const paths = soundToggle.querySelectorAll('path');
+                    paths.forEach(path => {
+                        if (path.getAttribute('fill')) {
+                            path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+                        }
+                        if (path.getAttribute('stroke')) {
+                            path.setAttribute('stroke', soundEnabled ? 'white' : '#666');
+                        }
+                    });
+                    
+                    // Mute/unmute all audio elements
+                    document.querySelectorAll('audio').forEach(audio => {
+                        audio.muted = !soundEnabled;
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

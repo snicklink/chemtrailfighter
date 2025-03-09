@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemtrail Madness</title>
+    <!-- 
+    PERFORMANCE OPTIMIZATIONS:
+    1. Game over threshold set to 8% chemtrail density to prevent slowdown
+    2. Added visual warning when approaching 7% chemtrail density
+    3. Skip rendering chemtrails that are far off-screen
+    -->
+    <!-- Add Visitor-like pixel font (Press Start 2P is the closest widely available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Visitor';
+            src: url('https://dl.dropboxusercontent.com/s/ecgr5oc2k3p9u36/visitor1.ttf?dl=0') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:hover {
+            transform: scale(1.1);
+        }
+        #game-logo {
+            width: 300px;
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 20px;
+            z-index: 5;
+            display: none;
+        }
+        #sound-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        #sound-toggle:hover {
+            background-color: #000;
+            transform: scale(1.05);
+        }
+        #perf-toggle {
+            position: absolute;
+            top: 10px;
+            right: 60px; /* Position it to the left of the sound toggle */
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 5;
+            display: none; /* Initially hidden, will be shown when game starts */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #perf-toggle:hover {
+            background-color: #000;
+            transform: scale(1.05);
+        }
+        #perf-toggle.active {
+            background-color: #2a6e2a; /* Green background when active */
+        }
+        #upgrades {
+            position: absolute;
+            top: 10px;
+            left: 200px;
+            display: none;
+            gap: 10px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            background-color: #666;
+            color: #fff;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s, background-color 0.3s;
+            font-weight: bold;
+        }
+        .upgrade-btn.active#upgrade-size { opacity: 1; background-color: #bd5704; }
+        .upgrade-btn.active#upgrade-style { opacity: 1; background-color: #b00c9f; }
+        .upgrade-btn.active#upgrade-shoot { opacity: 1; background-color: #510f7c; }
+        .upgrade-btn:hover.active { filter: brightness(1.2); }
+        #cheatcode {
+            position: absolute;
+            top: 10px;
+            left: 450px;
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            z-index: 5;
+            display: none;
+            width: 150px;
+            box-sizing: border-box;
+            text-transform: uppercase; /* Force text to display as uppercase */
+        }
+        #cheatcode:focus {
+            outline: none;
+        }
+        #cheatcode::placeholder {
+            color: #999; /* Lighter color for placeholder text */
+            opacity: 1; /* Ensure placeholder is visible */
+        }
+        /* Hide placeholder when user types */
+        #cheatcode:not(:placeholder-shown)::placeholder {
+            opacity: 0;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            z-index: 20;
+        }
+        #game-over-text {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        #game-over-text h1 {
+            font-size: 64px;
+            margin: 0;
+        }
+        #game-over-text p.points {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        #game-over-text p.message {
+            font-size: 20px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        #play-again-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 20px;
+        }
+        #play-again-btn:hover {
+            transform: scale(1.1);
+            background-color: #ffd700;
+        }
+        #willy-ad {
+            width: 200px;
+            height: auto;
+            cursor: pointer;
+        }
+        #snicklink {
+            color: #ffcc00;
+            text-decoration: underline;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #snicklink:hover {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <div id="start-container">
+            <img id="game-logo" src="./assets/gamelogo.png" alt="Game Logo">
+            <button id="start-btn">Spiel starten</button>
+        </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="sound-toggle">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+            <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <div id="upgrades">
+        <button id="upgrade-size" class="upgrade-btn">Size</button>
+        <button id="upgrade-style" class="upgrade-btn">Style</button>
+        <button id="upgrade-shoot" class="upgrade-btn">???</button>
+    </div>
+    <input id="cheatcode" type="text" placeholder="CHEAT">
+    <div id="game-over">
+        <div id="game-over-text">
+            <h1>GAME OVER</h1>
+            <p class="points">Points: 0</p>
+            <p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>
+        </div>
+        <button id="play-again-btn">Nochmal spielen</button>
+        <a href="https://snicklink.de" target="_blank"><img id="willy-ad" src="./assets/willyad.png" alt="Willy Ad"></a>
+    </div>
+    <audio id="background-music" loop preload="auto">
+        <source src="./assets/wolken.mp3" type="audio/mp3">
+    </audio>
+    <audio id="schwurbler-music" preload="auto">
+        <source src="./assets/schwurbler.mp3" type="audio/mp3">
+    </audio>
+    <audio id="twinkle-sound" preload="auto">
+        <source src="./assets/twinkle.mp3" type="audio/mp3">
+    </audio>
+    <audio id="shot-sound" preload="auto">
+        <source src="./assets/shot.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explode-sound" preload="auto">
+        <source src="./assets/explode.mp3" type="audio/mp3">
+    </audio>
+    <audio id="sky-music" preload="auto">
+        <source src="./assets/sky.mp3" type="audio/mp3">
+    </audio>
+    <audio id="best-sound" preload="auto">
+        <source src="./assets/best.mp3" type="audio/mp3">
+    </audio>
+    <audio id="star-sound" preload="auto">
+        <source src="./assets/star.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill-sound" preload="auto">
+        <source src="./assets/kill.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill2-sound" preload="auto">
+        <source src="./assets/kill2.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill3-sound" preload="auto">
+        <source src="./assets/kill3.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill4-sound" preload="auto">
+        <source src="./assets/kill4.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill5-sound" preload="auto">
+        <source src="./assets/kill5.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill6-sound" preload="auto">
+        <source src="./assets/kill6.mp3" type="audio/mp3">
+    </audio>
+    <audio id="kill7-sound" preload="auto">
+        <source src="./assets/kill7.mp3" type="audio/mp3">
+    </audio>
+    <audio id="life-sound" preload="auto">
+        <source src="./assets/life.mp3" type="audio/mp3">
+    </audio>
+    <audio id="alarm-sound" preload="auto">
+        <source src="./assets/alarm.mp3" type="audio/mp3">
+    </audio>
+    <audio id="own-music" preload="auto">
+        <source src="./assets/own.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreDisplay = document.getElementById('score');
+        const music = document.getElementById('background-music');
+        const schwurblerMusic = document.getElementById('schwurbler-music');
+        const twinkleSound = document.getElementById('twinkle-sound');
+        const shotSound = document.getElementById('shot-sound');
+        const explodeSound = document.getElementById('explode-sound');
+        const soundToggle = document.getElementById('sound-toggle');
+        const skyMusic = document.getElementById('sky-music');
+        const bestSound = document.getElementById('best-sound');
+        const starSound = new Audio('./assets/star.mp3'); // Add star sound for star power-up
+        const killSound = new Audio('./assets/kill.mp3'); // Sound for first kill in star mode
+        const kill2Sound = new Audio('./assets/kill2.mp3');
+        const kill3Sound = new Audio('./assets/kill3.mp3');
+        const kill4Sound = new Audio('./assets/kill4.mp3');
+        const kill5Sound = new Audio('./assets/kill5.mp3');
+        const kill6Sound = new Audio('./assets/kill6.mp3');
+        const kill7Sound = new Audio('./assets/kill7.mp3');
+        const lifeSound = new Audio('./assets/life.mp3'); // Special sound for 7 consecutive kills
+        const alarmSound = new Audio('./assets/alarm.mp3'); // Alarm sound for critical chemtrail density
+        const ownMusic = new Audio('./assets/own.mp3');
+        
+        // Current active mode music track
+        let currentModeMusic = null;
+        let currentMode = 'normal'; // Track the current music mode
+        
+        // Function to properly activate a game mode and cancel any existing modes
+        function activateGameMode(mode, duration = 0) {
+            console.log(`Activating mode: ${mode} (previous modes - star: ${starTimer > 0}, onyx: ${onyxTimer > 0}, schwab: ${schwabMode})`);
+            
+            // Cancel all existing modes first
+            starTimer = 0;
+            onyxTimer = 0;
+            schwabMode = false;
+            schwabModeTimer = 0;
+            isInverted = false;
+            cursorFlashing = false;
+            
+            // Activate the requested mode
+            switch(mode) {
+                case 'star':
+                    starTimer = duration || 600; // 10 seconds at 60 FPS
+                    cursorFlashing = true;
+                    flashOpacity = 0.5;
+                    flashDirection = -1;
+                    consecutiveStarKills = 0;
+                    
+                    // Spawn 7 extra planes when star mode begins (up to max 10 planes total)
+                    const extraPlanesToSpawn = Math.min(7, 10 - planes.length);
+                    console.log(`STAR MODE: Spawning ${extraPlanesToSpawn} extra planes`);
+                    
+                    // Spawn planes with a slight delay between each one
+                    for (let i = 0; i < extraPlanesToSpawn; i++) {
+                        setTimeout(() => {
+                            if (planes.length < 10) { // Double-check we're still under the limit
+                                const starPlane = new Plane();
+                                planes.push(starPlane);
+                                console.log(`STAR MODE: Extra plane ${i+1}/${extraPlanesToSpawn} spawned. Total planes: ${planes.length}`);
+                            }
+                        }, i * 200); // 200ms delay between each plane spawn
+                    }
+                    
+                    // Display announcement
+                    messages.push(new CenterMessage("STAR MODE", '#00ffff', 35, 150));
+                    break;
+                    
+                case 'onyx':
+                    onyxTimer = duration || 840;
+                    isInverted = true;
+                    
+                    // Display announcement
+                    messages.push(new CenterMessage("SCHWURBLER MODE", '#ff00ff', 35, 150));
+                    break;
+                    
+                case 'schwab':
+                    schwabMode = true;
+                    schwabModeTimer = duration || schwabModeMaxTime;
+                    
+                    // Display announcement
+                    messages.push(new CenterMessage("SCHWAB MODE", '#ff00ff', 35, 150));
+                    break;
+                    
+                case 'normal':
+                default:
+                    // Normal mode is the default when all other modes are canceled
+                    console.log("Returning to normal mode");
+                    break;
+            }
+            
+            // Update the music to match the new mode
+            if (soundEnabled) {
+                if (mode === 'normal') {
+                    playModeMusic('normal');
+                } else {
+                    playModeMusic(mode);
+                }
+            }
+            
+            // Update positions of any center messages
+            updateCenterMessagePositions();
+            
+            console.log(`Mode activated: ${mode}`);
+        }
+        
+        // Function to toggle mute state without restarting music
+        function toggleMuteState() {
+            if (!currentModeMusic) return;
+            
+            if (soundEnabled) {
+                currentModeMusic.muted = false;
+            } else {
+                currentModeMusic.muted = true;
+            }
+        }
+        
+        // Comprehensive music management system
+        function playModeMusic(mode) {
+            // Update the current mode
+            currentMode = mode;
+            
+            // Stop any currently playing mode music
+            if (music && !music.paused) music.pause();
+            if (schwurblerMusic && !schwurblerMusic.paused) schwurblerMusic.pause();
+            if (starSound && !starSound.paused) starSound.pause();
+            if (ownMusic && !ownMusic.paused) ownMusic.pause();
+            if (skyMusic && !skyMusic.paused) skyMusic.pause();
+            if (bestSound && !bestSound.paused) bestSound.pause();
+            
+            // Reset current music track
+            currentModeMusic = null;
+            
+            // Play the appropriate music based on mode
+            try {
+                switch(mode) {
+                    case 'normal':
+                        music.currentTime = 0;
+                        music.muted = !soundEnabled; // Ensure correct muted state
+                        music.play();
+                        currentModeMusic = music;
+                        break;
+                    case 'schwab':
+                        ownMusic.currentTime = 0;
+                        ownMusic.muted = !soundEnabled; // Ensure correct muted state
+                        ownMusic.play();
+                        currentModeMusic = ownMusic;
+                        break;
+                    case 'onyx':
+                        schwurblerMusic.currentTime = 0;
+                        schwurblerMusic.muted = !soundEnabled; // Ensure correct muted state
+                    skyMusic.pause();
+                    skyMusic.currentTime = 0;
+                } catch (e) { console.log("Music stop failed:", e); }
+            }
+        }
+
+        // Add a helper function to play music
+        function playMusic(musicTrack) {
+            if (!soundEnabled) return;
+            
+            // Pause all other music tracks first
+            music.pause();
+            schwurblerMusic.pause();
+            starSound.pause();
+            ownMusic.pause();
+            
+            // Play the requested track
+            try {
+                musicTrack.currentTime = 0;
+                musicTrack.play();
+            } catch (e) {
+                console.log("Failed to play music track:", e);
+            }
+        }
+
+    </script>
+</body>
+</html>

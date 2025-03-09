@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- Additional meta tags for mobile optimization -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="format-detection" content="telephone=no">
+    <title>Chemtrail Fighter - Mobile</title>
+    <!-- 
+    MOBILE OPTIMIZATIONS:
+    1. Touch controls instead of mouse
+    2. Offset touch position to prevent finger obstruction
+    3. Larger UI elements for better touch targets
+    4. Portrait-friendly layout
+    5. Optimized layout for mobile screens
+    -->
+    <!-- Add Visitor-like pixel font (Press Start 2P is the closest widely available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Visitor';
+            src: url('https://dl.dropboxusercontent.com/s/ecgr5oc2k3p9u36/visitor1.ttf?dl=0') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            touch-action: none; /* Prevent default touch actions */
+            /* Fix for iOS Safari's address bar */
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            /* Add background gradient as fallback */
+            background: linear-gradient(to bottom, #4d0e7e, #fd491e, #fed430);
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            max-width: 95%;
+        }
+        #start-products {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap; /* Allow wrapping for portrait mode */
+        }
+        .product-link {
+            transition: transform 0.3s ease;
+            display: block;
+        }
+        .product-link:hover {
+            transform: scale(1.05);
+        }
+        .product-image {
+            height: 100px; /* Smaller for mobile portrait */
+            border-radius: 5px;
+        }
+        #start-btn {
+            padding: 12px 25px;
+            font-size: 22px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:active {
+            transform: scale(0.95);
+        }
+        #game-logo {
+            width: 200px; /* Smaller for mobile portrait */
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+            /* Add this to ensure content fills the canvas */
+            object-fit: cover;
+            background: linear-gradient(to bottom, #4d0e7e, #fd491e, #fed430);
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 5;
+        }
+        #sound-toggle {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+        /* Upgrades positioning for portrait mode */
+        #upgrades {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffcc00;
+            border-radius: 50%;
+            color: #fff;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .upgrade-btn:active {
+            transform: scale(0.9);
+        }
+        #cheatcode {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: #fff;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 5px;
+            width: 80px;
+            z-index: 5;
+            display: none;
+        }
+        /* Touch indicator for portrait mode - positioned closer to center */
+        #touch-indicator {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            pointer-events: none;
+            display: none;
+            z-index: 4;
+        }
+        #target-reticle {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0.7;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        #game-over-text {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-family: 'Visitor', 'Press Start 2P', monospace;
+            color: #fff;
+            max-width: 80%;
+        }
+        #game-over-text h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #game-over-text .points {
+            font-size: 36px;
+            color: #ffcc00;
+            margin: 15px 0;
+        }
+        #play-again-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #play-again-btn:active {
+            transform: scale(0.95);
+        }
+        /* Custom styles for portrait mode gameplay */
+        @media (max-width: 600px) {
+            .product-image {
+                height: 80px;
+            }
+            #game-logo {
+                width: 180px;
+            }
+            .upgrade-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="start-screen">
+            <div id="start-container">
+                <img id="game-logo" src="./assets/logo.png" alt="Chemtrail Fighter Logo">
+                <div id="start-products">
+                    <a href="https://www.infowarsstore.com/nebula-zero-blue-light-blocking-gummies" target="_blank" class="product-link">
+                        <img class="product-image" src="./assets/product1.jpg" alt="Product 1">
+                    </a>
+                    <a href="https://www.infowarsstore.com/hlf-16oz-20-case" target="_blank" class="product-link">
+                        <img class="product-image" src="./assets/product2.jpg" alt="Product 2">
+                    </a>
+                </div>
+                <button id="start-btn">Start</button>
+            </div>
+        </div>
+        
+        <div id="score">Score: 0</div>
+        
+        <button id="sound-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+        </button>
+        
+        <div id="upgrades" style="display: none;">
+            <button class="upgrade-btn" id="upgrade-fire">F</button>
+            <button class="upgrade-btn" id="upgrade-speed">S</button>
+        </div>
+        
+        <input type="text" id="cheatcode" placeholder="Cheat">
+        
+        <div id="touch-indicator"></div>
+        <div id="target-reticle">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="20" cy="20" r="18" stroke="white" stroke-width="2" stroke-dasharray="4 4"/>
+                <line x1="20" y1="8" x2="20" y2="12" stroke="white" stroke-width="2"/>
+                <line x1="20" y1="28" x2="20" y2="32" stroke="white" stroke-width="2"/>
+                <line x1="8" y1="20" x2="12" y2="20" stroke="white" stroke-width="2"/>
+                <line x1="28" y1="20" x2="32" y2="20" stroke="white" stroke-width="2"/>
+            </svg>
+        </div>
+        
+        <div id="game-over">
+            <div id="game-over-text">
+                <h2>Game Over</h2>
+                <p>Your score:</p>
+                <div class="points">0</div>
+                <button id="play-again-btn">Play Again</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio elements -->
+    <audio id="background-music" loop>
+        <source src="./assets/sounds/music.mp3" type="audio/mp3">
+    </audio>
+    <audio id="shoot-sound">
+        <source src="./assets/sounds/shoot.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explosion-sound">
+        <source src="./assets/sounds/explosion.mp3" type="audio/mp3">
+    </audio>
+    <audio id="coin-sound">
+        <source src="./assets/sounds/coin.mp3" type="audio/mp3">
+    </audio>
+    
+    <script>
+        // Core game functionality for mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            // Connect the start button to game initialization
+            const startBtn = document.getElementById('start-btn');
+            const canvas = document.getElementById('game-canvas');
+            const startScreen = document.getElementById('start-screen');
+            const scoreDisplay = document.getElementById('score');
+            const music = document.getElementById('background-music');
+            const soundToggle = document.getElementById('sound-toggle');
+            
+            if (startBtn) {
+                startBtn.addEventListener('click', startGame);
+                startBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    startGame();
+                }, { passive: false });
+                
+                console.log('Start button event listeners attached');
+            } else {
+                console.error('Start button not found');
+            }
+            
+            // Try to get the game in fullscreen mode
+            const gameContainer = document.getElementById('game-container');
+            if (gameContainer) {
+                // Add fullscreen button
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.id = 'fullscreen-toggle';
+                fullscreenBtn.innerHTML = '⛶';
+                fullscreenBtn.style.position = 'absolute';
+                fullscreenBtn.style.right = '60px';
+                fullscreenBtn.style.top = '10px';
+                fullscreenBtn.style.width = '40px';
+                fullscreenBtn.style.height = '40px';
+                fullscreenBtn.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                fullscreenBtn.style.border = 'none';
+                fullscreenBtn.style.borderRadius = '50%';
+                fullscreenBtn.style.color = 'white';
+                fullscreenBtn.style.fontSize = '20px';
+                fullscreenBtn.style.display = 'flex';
+                fullscreenBtn.style.justifyContent = 'center';
+                fullscreenBtn.style.alignItems = 'center';
+                fullscreenBtn.style.zIndex = '5';
+                fullscreenBtn.style.cursor = 'pointer';
+                
+                gameContainer.appendChild(fullscreenBtn);
+                
+                fullscreenBtn.addEventListener('click', toggleFullscreen);
+                fullscreenBtn.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleFullscreen();
+                }, { passive: false });
+            }
+            
+            // Basic game startup function
+            function startGame() {
+                console.log('Starting game...');
+                startScreen.style.opacity = '0';
+                setTimeout(() => startScreen.style.display = 'none', 500);
+                canvas.classList.add('active');
+                
+                // Remove any blur effect from previous game over
+                canvas.style.filter = 'none';
+                
+                // Show score and other UI elements
+                scoreDisplay.style.display = 'block';
+                
+                // Play background music if sound is enabled
+                try {
+                    if (!music.paused) {
+                        music.pause();
+                        music.currentTime = 0;
+                    }
+                    music.play().catch(e => console.log("Music failed to play:", e));
+                } catch (e) {
+                    console.error("Audio error:", e);
+                }
+                
+                // Request fullscreen for better experience on mobile
+                requestFullscreen();
+                
+                // Initialize canvas with sky background
+                initializeCanvas();
+                
+                // Setup touch controls for portrait mode
+                setupTouchControls();
+            }
+            
+            // Function to toggle fullscreen
+            function toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+            
+            // Function to request fullscreen
+            function requestFullscreen() {
+                const body = document.documentElement;
+                
+                if (body.requestFullscreen) {
+                    body.requestFullscreen().catch(e => console.log("Fullscreen request failed:", e));
+                } else if (body.webkitRequestFullscreen) {
+                    body.webkitRequestFullscreen();
+                } else if (body.mozRequestFullScreen) {
+                    body.mozRequestFullScreen();
+                } else if (body.msRequestFullscreen) {
+                    body.msRequestFullscreen();
+                }
+            }
+            
+            // Function to setup touch controls for portrait mode
+            function setupTouchControls() {
+                const touchIndicator = document.getElementById('touch-indicator');
+                const targetReticle = document.getElementById('target-reticle');
+                
+                if (!touchIndicator || !targetReticle) return;
+                
+                // Show touch indicator
+                touchIndicator.style.display = 'block';
+                targetReticle.style.display = 'block';
+                
+                // Initial position (center of screen)
+                let touchX = window.innerWidth / 2;
+                let touchY = window.innerHeight / 2;
+                
+                // Update target position - for portrait mode, 
+                // we'll position the targeting reticle above the touch point
+                function updateTargetPosition(x, y) {
+                    touchX = x;
+                    touchY = y;
+                    
+                    // Show touch indicator at the actual touch position
+                    touchIndicator.style.left = (x - 15) + 'px';
+                    touchIndicator.style.top = (y - 15) + 'px';
+                    
+                    // Position the reticle 100px above the touch point for portrait mode
+                    // This allows the player to see the targets above their finger
+                    targetReticle.style.left = (x - 20) + 'px';
+                    targetReticle.style.top = (y - 120) + 'px'; // 100px offset upward
+                }
+                
+                // Handle touch controls
+                document.addEventListener('touchstart', function(e) {
+                    if (e.target.tagName.toLowerCase() === 'button' || 
+                        e.target.tagName.toLowerCase() === 'input') {
+                        return; // Don't process touch on UI elements
+                    }
+                    
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    updateTargetPosition(touch.clientX, touch.clientY);
+                    
+                    // TODO: Add firing mechanism here
+                    console.log("Shoot at position:", targetReticle.style.left, targetReticle.style.top);
+                    
+                }, { passive: false });
+                
+                document.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    updateTargetPosition(touch.clientX, touch.clientY);
+                }, { passive: false });
+                
+                document.addEventListener('touchend', function(e) {
+                    // Optional: hide touch indicator or other actions on touch end
+                }, { passive: false });
+            }
+            
+            // Initialize canvas with sky gradient
+            function initializeCanvas() {
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                
+                // Set canvas dimensions to match window
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                // Draw sky gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#4d0e7e'); // Deep purple at top
+                gradient.addColorStop(0.5, '#fd491e'); // Orange in middle
+                gradient.addColorStop(1, '#fed430'); // Yellow at bottom
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                console.log("Canvas initialized with sky background");
+                
+                // Initialize main game components
+                initializeGameCore();
+            }
+            
+            // Function to initialize the core game engine
+            function initializeGameCore() {
+                // Show UI elements that should be visible during gameplay
+                const upgradesDiv = document.getElementById('upgrades');
+                const cheatcodeInput = document.getElementById('cheatcode');
+                
+                if (upgradesDiv) upgradesDiv.style.display = 'flex';
+                if (cheatcodeInput) cheatcodeInput.style.display = 'block';
+                
+                // Create clouds and cityscape as background elements
+                createClouds();
+                
+                // Start the game loop
+                requestAnimationFrame(gameLoop);
+                
+                console.log("Game core initialized successfully");
+            }
+            
+            // Create cloud elements for background
+            function createClouds() {
+                const cloudCount = 8;
+                window.clouds = [];
+                
+                // Create cloud image objects
+                const cloudImg1 = new Image();
+                cloudImg1.src = './assets/cloud1.png';
+                const cloudImg2 = new Image();
+                cloudImg2.src = './assets/cloud2.png';
+                
+                const cloudImgs = [cloudImg1, cloudImg2];
+                
+                // Create cloud objects
+                for (let i = 0; i < cloudCount; i++) {
+                    const cloud = {
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * (canvas.height * 0.6),
+                        speed: Math.random() * 0.3 + 0.1,
+                        size: Math.random() * 0.4 + 0.3,
+                        img: cloudImgs[Math.floor(Math.random() * cloudImgs.length)]
+                    };
+                    window.clouds.push(cloud);
+                }
+            }
+            
+            // Main game loop
+            function gameLoop() {
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, '#4d0e7e'); // Deep purple at top
+                gradient.addColorStop(0.5, '#fd491e'); // Orange in middle
+                gradient.addColorStop(1, '#fed430'); // Yellow at bottom
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw clouds
+                if (window.clouds) {
+                    window.clouds.forEach(cloud => {
+                        // Update cloud position
+                        cloud.x -= cloud.speed;
+                        if (cloud.x + 200 < 0) {
+                            cloud.x = canvas.width;
+                            cloud.y = Math.random() * (canvas.height * 0.6);
+                        }
+                        
+                        // Draw cloud
+                        if (cloud.img.complete) {
+                            const width = 200 * cloud.size;
+                            const height = 100 * cloud.size;
+                            ctx.globalAlpha = 0.7;
+                            ctx.drawImage(cloud.img, cloud.x, cloud.y, width, height);
+                            ctx.globalAlpha = 1;
+                        }
+                    });
+                }
+                
+                // Draw cityscape at bottom
+                drawCityscape(ctx);
+                
+                // Continue the loop
+                requestAnimationFrame(gameLoop);
+            }
+            
+            // Draw city silhouette at bottom of screen
+            function drawCityscape(ctx) {
+                ctx.fillStyle = '#000'; // Black silhouette
+                
+                // Far buildings (smaller, slower)
+                const farBuildingCount = 15;
+                const farSpacing = canvas.width / farBuildingCount;
+                
+                for (let i = 0; i < farBuildingCount; i++) {
+                    const x = i * farSpacing;
+                    const width = farSpacing * 0.8;
+                    const height = 20 + Math.random() * 30;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+                
+                // Middle buildings
+                const midBuildingCount = 10;
+                const midSpacing = canvas.width / midBuildingCount;
+                
+                for (let i = 0; i < midBuildingCount; i++) {
+                    const x = i * midSpacing;
+                    const width = midSpacing * 0.7;
+                    const height = 30 + Math.random() * 40;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+                
+                // Front buildings (larger, faster)
+                const frontBuildingCount = 8;
+                const frontSpacing = canvas.width / frontBuildingCount;
+                
+                for (let i = 0; i < frontBuildingCount; i++) {
+                    const x = i * frontSpacing;
+                    const width = frontSpacing * 0.6;
+                    const height = 50 + Math.random() * 60;
+                    ctx.fillRect(x, canvas.height - height, width, height);
+                }
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                // Update canvas dimensions
+                if (canvas && canvas.classList.contains('active')) {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    
+                    // Redraw background
+                    initializeCanvas();
+                }
+            });
+            
+            // Sound toggle functionality
+            if (soundToggle) {
+                let soundEnabled = true;
+                
+                soundToggle.addEventListener('click', toggleSound);
+                soundToggle.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleSound();
+                }, { passive: false });
+                
+                function toggleSound() {
+                    soundEnabled = !soundEnabled;
+                    
+                    // Update SVG color based on sound state
+                    const paths = soundToggle.querySelectorAll('path');
+                    paths.forEach(path => {
+                        if (path.getAttribute('fill')) {
+                            path.setAttribute('fill', soundEnabled ? 'white' : '#666');
+                        }
+                        if (path.getAttribute('stroke')) {
+                            path.setAttribute('stroke', soundEnabled ? 'white' : '#666');
+                        }
+                    });
+                    
+                    // Mute/unmute all audio elements
+                    document.querySelectorAll('audio').forEach(audio => {
+                        audio.muted = !soundEnabled;
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

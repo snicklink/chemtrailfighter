@@ -1,0 +1,2114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemtrail Madness</title>
+    <!-- Add Visitor-like pixel font (Press Start 2P is the closest widely available) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Visitor';
+            src: url('https://dl.dropboxusercontent.com/s/ecgr5oc2k3p9u36/visitor1.ttf?dl=0') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: Arial, sans-serif;
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        #start-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            z-index: 12;
+        }
+        #start-btn:hover {
+            transform: scale(1.1);
+        }
+        #game-logo {
+            width: 300px;
+            height: auto;
+            z-index: 11;
+        }
+        #game-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: blur(5px);
+            transition: filter 0.5s ease;
+        }
+        #game-canvas.active {
+            filter: none;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 20px;
+            z-index: 5;
+            display: none;
+        }
+        #sound-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 5;
+            display: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        #sound-toggle:hover {
+            background-color: #000;
+            transform: scale(1.05);
+        }
+        #upgrades {
+            position: absolute;
+            top: 10px;
+            left: 200px;
+            display: none;
+            gap: 10px;
+            z-index: 5;
+        }
+        .upgrade-btn {
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #666;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+        .upgrade-btn.active#upgrade-size { opacity: 1; background-color: #fed430; }
+        .upgrade-btn.active#upgrade-style { opacity: 1; background-color: #fd491e; }
+        .upgrade-btn.active#upgrade-shoot { opacity: 1; background-color: #4d0e7e; }
+        .upgrade-btn:hover.active { filter: brightness(1.2); }
+        #cheatcode {
+            position: absolute;
+            top: 10px;
+            left: 450px;
+            padding: 5px 15px;
+            font-size: 14px;
+            background-color: #fff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            z-index: 5;
+            display: none;
+            width: 150px;
+            box-sizing: border-box;
+        }
+        #cheatcode:focus {
+            outline: none;
+        }
+        #cheatcode::placeholder {
+            color: #666;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            z-index: 20;
+        }
+        #game-over-text {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-width: 80%;
+        }
+        #game-over-text h1 {
+            font-size: 64px;
+            margin: 0;
+        }
+        #game-over-text p.points {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        #game-over-text p.message {
+            font-size: 20px;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        #play-again-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            margin-bottom: 20px;
+        }
+        #play-again-btn:hover {
+            transform: scale(1.1);
+            background-color: #ffd700;
+        }
+        #willy-ad {
+            width: 200px;
+            height: auto;
+            cursor: pointer;
+        }
+        #snicklink {
+            color: #ffcc00;
+            text-decoration: underline;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        #snicklink:hover {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <div id="start-container">
+            <img id="game-logo" src="./assets/gamelogo.png" alt="Game Logo">
+            <button id="start-btn">Spiel starten</button>
+        </div>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="sound-toggle">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+            <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+    <div id="upgrades">
+        <button id="upgrade-size" class="upgrade-btn">Größer</button>
+        <button id="upgrade-style" class="upgrade-btn">Stil</button>
+        <button id="upgrade-shoot" class="upgrade-btn">???</button>
+    </div>
+    <input id="cheatcode" type="text" placeholder="CHEAT">
+    <div id="game-over">
+        <div id="game-over-text">
+            <h1>GAME OVER</h1>
+            <p class="points">Points: 0</p>
+            <p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>
+        </div>
+        <button id="play-again-btn">Nochmal spielen</button>
+        <a href="https://snicklink.de" target="_blank"><img id="willy-ad" src="./assets/willyad.png" alt="Willy Ad"></a>
+    </div>
+    <audio id="background-music" loop preload="auto">
+        <source src="./assets/wolken.mp3" type="audio/mp3">
+    </audio>
+    <audio id="schwurbler-music" preload="auto">
+        <source src="./assets/schwurbler.mp3" type="audio/mp3">
+    </audio>
+    <audio id="twinkle-sound" preload="auto">
+        <source src="./assets/twinkle.mp3" type="audio/mp3">
+    </audio>
+    <audio id="shot-sound" preload="auto">
+        <source src="./assets/shot.mp3" type="audio/mp3">
+    </audio>
+    <audio id="explode-sound" preload="auto">
+        <source src="./assets/explode.mp3" type="audio/mp3">
+    </audio>
+    <audio id="sky-music" preload="auto">
+        <source src="./assets/sky.mp3" type="audio/mp3">
+    </audio>
+    <audio id="best-sound" preload="auto">
+        <source src="./assets/best.mp3" type="audio/mp3">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreDisplay = document.getElementById('score');
+        const music = document.getElementById('background-music');
+        const schwurblerMusic = document.getElementById('schwurbler-music');
+        const twinkleSound = document.getElementById('twinkle-sound');
+        const shotSound = document.getElementById('shot-sound');
+        const explodeSound = document.getElementById('explode-sound');
+        const soundToggle = document.getElementById('sound-toggle');
+        const skyMusic = document.getElementById('sky-music');
+        const bestSound = document.getElementById('best-sound');
+        
+        const upgradesDiv = document.getElementById('upgrades');
+        const sizeBtn = document.getElementById('upgrade-size');
+        const styleBtn = document.getElementById('upgrade-style');
+        const shootBtn = document.getElementById('upgrade-shoot');
+        const cheatcodeInput = document.getElementById('cheatcode');
+        const gameOverDiv = document.getElementById('game-over');
+        const gameOverText = document.getElementById('game-over-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const planeImg = new Image();
+        planeImg.src = './assets/plane.png';
+        const planerImg = new Image();
+        planerImg.src = './assets/planer.png';
+        const schwabImg = new Image();
+        schwabImg.src = './assets/Schwab.png';
+        const cursorImgs = Array(6).fill().map((_, i) => {
+            const img = new Image();
+            img.src = `./assets/tinfoilhat.png`;
+            return img;
+        });
+        const cloudImgs = [new Image(), new Image()];
+        cloudImgs[0].src = './assets/cloud1.png';
+        cloudImgs[1].src = './assets/cloud2.png';
+        const explosionFrames = [];
+        for (let i = 0; i <= 22; i++) {
+            const img = new Image();
+            img.src = `./assets/exp/frame-${String(i).padStart(6, '0')}.png`;
+            explosionFrames.push(img);
+        }
+
+        // Game variables
+        let gameStarted = false;
+        let gameHasStarted = false; // Set to true after a short delay to prevent early messages
+        let gameOver = false;
+        let gameTime = 0;
+        let score = 0;
+        let sizeLevel = 0;
+        let styleLevel = 0;
+        let shootLevel = 0;
+        let starTimer = 0;
+        let onyxTimer = 0;
+        let onyxTextX = canvas.width;
+        let isInverted = false;
+        let mouseX = -100;
+        let mouseY = -100;
+        let isMouseDown = false;
+        let planes = [];
+        let chemtrails = [];
+        let particles = [];
+        let sprayParticles = [];
+        let collectibles = [];
+        let clouds = [];
+        let cityFront = [];
+        let cityMid = [];
+        let cityFar = [];
+        let shots = [];
+        let shotCount = 0;
+        let shotCooldown = 0;
+        let targetMode = false;
+        let targetPlane = null;
+        let targetRemaining = false;
+        let targetPosition = { x: 0, y: 0 };
+        let explosions = [];
+        let messages = [];
+        let twinkleEffects = [];
+        let comboCount = 0;
+        let skyCleanMessageShown = false;
+        let touchStart = { x: 0, y: 0 };
+        let onyxSpawnedEarly = false;
+        let schwabMode = false; // Schwab mode flag for cheat
+        let slowMode = false; // Slow mode flag for reduced plane spawning
+        let hitIndicators = [];
+
+        const upgradeCosts = [10000, 40000, 90000, 160000, 250000];
+        const cursorSizes = [60, 90, 135, 202.5, 303.75, 455.625];
+        const cursorColors = ['#fff', '#ff0', '#0ff', '#f0f', '#00f', '#f00'];
+        const explosionSizeFactor = 1.1;
+
+        const onyxMsg = "THE ONYX STONE OF KNOWLEDGE";
+        const isDebugMode = true; // Set to true to enable debugging
+
+        class Cloud {
+            constructor() {
+                this.x = Math.random() * (canvas.width + 200);
+                this.y = Math.random() * canvas.height * 0.8;
+                this.sizeFactor = Math.random() * 0.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.speed = Math.random() * 0.4 + 0.2;
+                this.type = Math.floor(Math.random() * 2);
+            }
+            update() {
+                this.x -= this.speed;
+                if (this.x + (190 * this.sizeFactor) < 0) {
+                    this.x = canvas.width + Math.random() * 200;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.sizeFactor = Math.random() * 0.5 + 0.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.speed = Math.random() * 0.4 + 0.2;
+                    this.type = Math.floor(Math.random() * 2);
+                }
+            }
+            draw() {
+                const img = cloudImgs[this.type];
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                const width = 190 * this.sizeFactor;
+                const height = 70 * this.sizeFactor;
+                if (img.complete && img.naturalWidth) {
+                    ctx.drawImage(img, this.x, this.y - height / 2, width, height);
+                } else {
+                    ctx.fillStyle = isInverted ? '#000' : '#fff';
+                    ctx.fillRect(this.x, this.y - height / 2, width, height);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Plane {
+            constructor() {
+                this.type = Math.random() < 0.1 ? 'stealth' : 'normal';
+                this.sizeFactor = this.type === 'stealth' ? Math.random() * 0.3 + 0.2 : (Math.random() < 0.05 ? 3 : Math.random() * 0.5 + 0.5);
+                this.lineWidth = this.type === 'stealth' ? 1 : (this.sizeFactor === 3 ? 9 : 3);
+                this.points = this.type === 'stealth' ? 20 : (this.sizeFactor === 3 ? 50 : 10);
+                this.opacity = this.type === 'stealth' ? Math.random() * 0.2 + 0.1 : Math.random() * 0.75 + 0.25;
+                this.tIncrement = this.type === 'stealth' ? 4 : 2;
+                this.isCurved = Math.random() < 0.1;
+                this.t = 0;
+                this.loopCount = this.isCurved ? Math.floor(Math.random() * 2) + 1 : 0;
+                this.initPath();
+                this.lastTrail = { x: this.x, y: this.y };
+                console.log(`New plane created - Type: ${this.type}, Size: ${this.sizeFactor.toFixed(2)}, Points: ${this.points}`);
+            }
+            initPath() {
+                const speedFactor = this.type === 'stealth' ? Math.random() * 3 + 2 : Math.random() * 2 + 1;
+                if (this.isCurved) {
+                    this.fromLeft = Math.random() < 0.5;
+                    this.x = this.fromLeft ? -50 : canvas.width + 50;
+                    this.y = Math.random() * canvas.height * 0.8;
+                    this.startX = this.x;
+                    this.startY = this.y;
+                    this.targetX = this.fromLeft ? canvas.width + 50 : -50;
+                    this.amplitude = canvas.height * 0.3;
+                    this.frequency = this.loopCount * Math.PI * 2 / canvas.width;
+                } else {
+                    const isHorizontal = Math.random() < 0.8;
+                    if (isHorizontal) {
+                        const fromLeft = Math.random() < 0.5;
+                        this.x = fromLeft ? -50 : canvas.width + 50;
+                        this.y = Math.random() < 0.9 ? Math.random() * (canvas.height * 0.66) : canvas.height * 0.66 + Math.random() * (canvas.height * 0.34);
+                        const targetX = fromLeft ? canvas.width : 0;
+                        const targetY = Math.random() * canvas.height;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    } else {
+                        const fromTop = Math.random() < 0.5;
+                        this.x = Math.random() * canvas.width;
+                        this.y = fromTop ? -50 : canvas.height + 50;
+                        const targetY = fromTop ? canvas.height : 0;
+                        const targetX = Math.random() * canvas.width;
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.dx = speedFactor * Math.cos(angle);
+                        this.dy = speedFactor * Math.sin(angle);
+                    }
+                }
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                if (targetPlane && Math.hypot(this.x - targetPlane.x, this.y - targetPlane.y) < 30) { // Increased collision radius
+                    // Only count the shot if this is the first projectile to hit in this volley
+                    const isFirstHit = shots.indexOf(this) === 0;
+                    if (isFirstHit) {
+                        shotCount++;
+                        console.log("Shot hit! Current count:", shotCount);
+                        
+                        // Add hit indicator at target position
+                        hitIndicators.push(new HitIndicator(targetPlane.x, targetPlane.y, 25));
+                    }
+                    
+                    shots = shots.filter(s => s !== this);
+                    
+                    // Determine required shots based on plane size - with DEBUGGING
+                    let requiredShots = 5; // Default for small planes
+                    
+                    if (targetPlane.sizeFactor >= 2.5) {
+                        requiredShots = 15; // Big planes (sizeFactor 2.5 or larger)
+                        console.log("Big plane detected. Required shots:", requiredShots);
+                    } else if (targetPlane.sizeFactor >= 0.5) {
+                        requiredShots = 10; // Medium planes
+                        console.log("Medium plane detected. Required shots:", requiredShots);
+                    }
+                    console.log(`Current shots: ${shotCount}/${requiredShots}`);
+                    
+                    if (shotCount >= requiredShots) {
+                        console.log("ENOUGH SHOTS! Destroying plane now!");
+                        // Store the position of the exploding target
+                        targetPosition.x = targetPlane.x;
+                        targetPosition.y = targetPlane.y;
+                        
+                        // Set flag to keep target cursor visible during explosion
+                        targetRemaining = true;
+                        
+                        explosions.push(new Explosion(targetPlane.x, targetPlane.y, targetPlane.sizeFactor));
+                        if (soundEnabled) {
+                            try { explodeSound.play(); } catch (e) { console.log("Explode sound failed:", e); }
+                        }
+                        
+                        // Add score based on plane type and size
+                        const planeScore = targetPlane.points * 100;
+                        score += planeScore;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        updateUpgrades();
+                        
+                        // Create a twinkle effect to show the score
+                        twinkleEffects.push(new Twinkle(targetPlane.x, targetPlane.y, `+${planeScore}`));
+                        
+                        // Handle combo system
+                        const currentTime = gameTime;
+                        const timeSinceLast = currentTime - lastPlaneExplodeTime;
+                        console.log("Plane destroyed! Combo count:", comboCount);
+                        
+                        // Always increment combo count regardless of time passed
+                        comboCount++;
+                        console.log("Combo incremented to:", comboCount);
+                        if (comboCount >= 5) {
+                            console.log("Combo 5 achieved!");
+                            const comboBonus = 5000;
+                            score += comboBonus;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            
+                            // Force a new center message for combo with more visibility
+                            const comboMsg = new CenterMessage(`NICE COMBO! +${comboBonus}`, '#ffffff', 40, 180);
+                            messages = messages.filter(m => !(m instanceof CenterMessage && m.text.includes("COMBO"))); // Remove any existing combo messages
+                            messages.push(comboMsg);
+                            console.log("Added combo message to messages array. Current messages:", messages.length);
+                            
+                            // Force immediate display of the message
+                            comboMsg.draw();
+                            
+                            comboCount = 0; // Reset after awarding bonus
+                        }
+                        
+                        lastPlaneExplodeTime = currentTime; // Keep tracking time for debugging purposes
+                        
+                        // Remove the plane but keep targeting mode active until explosion ends
+                        planes = planes.filter(p => p !== targetPlane);
+                        console.log("Plane destroyed! Remaining planes:", planes.length, "Combo:", comboCount);
+                        targetPlane = null;
+                        shots = [];
+                        shotCount = 0;
+                        shotCooldown = 0;
+                    }
+                }
+                if (this.x < -50 || this.x > canvas.width + 50 || this.y < -50 || this.y > canvas.height + 50) {
+                    planes = planes.filter(p => p !== this);
+                    if (this === targetPlane) {
+                        targetPlane = null;
+                        targetMode = false;
+                        shotCount = 0;
+                        shots = [];
+                        shotCooldown = 0;
+                    }
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.atan2(this.dy, this.dx));
+                const width = 75.3 * this.sizeFactor;
+                const height = 32.1 * this.sizeFactor;
+                
+                let img;
+                let flipHorizontal = false;
+                let flipVertical = false;
+                if (schwabMode) {
+                    // When in Schwab mode, use the Schwab image
+                    img = schwabImg;
+                    // Determine flip direction based on movement
+                    flipHorizontal = this.isCurved ? !this.fromLeft : this.dx < 0;
+                    flipVertical = this.isCurved ? !this.fromLeft : this.dx < 0;
+                } else if (this.isCurved) {
+                    img = this.fromLeft ? planeImg : planerImg;
+                    flipHorizontal = !this.fromLeft;
+                    flipVertical = !this.fromLeft;
+                } else {
+                    img = this.dx > 0 ? planeImg : planerImg;
+                    flipHorizontal = this.dx < 0;
+                    flipVertical = this.dx < 0;
+                }
+                
+                if (img.complete && img.naturalWidth) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    if (flipHorizontal || flipVertical) {
+                        tempCtx.translate(flipHorizontal ? width : 0, flipVertical ? height : 0);
+                        tempCtx.scale(flipHorizontal ? -1 : 1, flipVertical ? -1 : 1);
+                    }
+                    
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    
+                    // Only apply black fill for regular planes, not for Schwab mode
+                    if (!schwabMode) {
+                        tempCtx.globalCompositeOperation = 'source-in';
+                        tempCtx.fillStyle = '#000';
+                        tempCtx.fillRect(0, 0, width, height);
+                    }
+                    
+                    ctx.drawImage(tempCanvas, -width / 2, -height / 2, width, height);
+                } else {
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(-width / 2, -height / 2, width, height);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        class Shot {
+            constructor(x, y, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.speed = 10;
+                const angle = Math.atan2(targetY - y, targetX - x);
+                this.dx = Math.cos(angle) * this.speed;
+                this.dy = Math.sin(angle) * this.speed;
+                this.size = 5;
+                console.log(`Shot fired at target: ${targetX},${targetY}`);
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                
+                // Fix: ensure targetPlane exists and improve hit detection
+                if (targetPlane && Math.hypot(this.x - targetPlane.x, this.y - targetPlane.y) < 30) { // Increased hit radius
+                    // Only count the shot if this is the first projectile to hit in this volley
+                    const isFirstHit = shots.indexOf(this) === 0;
+                    if (isFirstHit) {
+                        shotCount++;
+                        console.log("Shot hit! Current count:", shotCount);
+                        
+                        // Add hit indicator at target position
+                        hitIndicators.push(new HitIndicator(targetPlane.x, targetPlane.y, 25));
+                    }
+                    
+                    shots = shots.filter(s => s !== this);
+                    
+                    // Determine required shots based on plane size
+                    let requiredShots = 5; // Default for small planes
+                    
+                    if (targetPlane.sizeFactor >= 2.5) {
+                        requiredShots = 15; // Big planes need more shots
+                        console.log("Big plane detected. Required shots:", requiredShots);
+                    } else if (targetPlane.sizeFactor >= 0.5) {
+                        requiredShots = 10; // Medium planes
+                        console.log("Medium plane detected. Required shots:", requiredShots);
+                    }
+                    console.log(`Current shots: ${shotCount}/${requiredShots}`);
+                    
+                    if (shotCount >= requiredShots) {
+                        console.log("ENOUGH SHOTS! Destroying plane now!");
+                        // Store the position of the exploding target
+                        targetPosition.x = targetPlane.x;
+                        targetPosition.y = targetPlane.y;
+                        
+                        // Set flag to keep target cursor visible during explosion
+                        targetRemaining = true;
+                        
+                        explosions.push(new Explosion(targetPlane.x, targetPlane.y, targetPlane.sizeFactor));
+                        if (soundEnabled) {
+                            try { 
+                                const shotSoundClone = new Audio('./assets/shot.mp3');
+                                shotSoundClone.volume = 0.7;
+                                shotSoundClone.play();
+                            } catch (e) { 
+                                console.log("Shot sound failed:", e);
+                                try {
+                                    shotSound.currentTime = 0;
+                                    shotSound.play();
+                                } catch (e2) {
+                                    console.log("Fallback shot sound failed:", e2);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    shots = shots.filter(s => s !== this);
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = isInverted ? '#000' : '#fff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Explosion {
+            constructor(x, y, sizeFactor = 1) {
+                this.x = x;
+                this.y = y;
+                this.frame = 0;
+                this.maxFrames = explosionFrames.length;
+                this.life = this.maxFrames * 2;
+                this.size = 100 * explosionSizeFactor * sizeFactor;
+                this.isLastExplosion = true;
+            }
+            update() {
+                this.life--;
+                this.frame = Math.floor((this.maxFrames - 1) * (1 - this.life / (this.maxFrames * 2)));
+                if (this.frame >= this.maxFrames) this.frame = this.maxFrames - 1;
+                
+                if (this.life <= 0 && this.isLastExplosion && targetRemaining) {
+                    targetRemaining = false;
+                    targetMode = false;
+                }
+            }
+            draw() {
+                const img = explosionFrames[this.frame];
+                if (img.complete && img.naturalWidth) {
+                    ctx.save();
+                    if (isInverted) ctx.filter = 'invert(1)';
+                    ctx.drawImage(img, this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+                    ctx.restore();
+                }
+            }
+        }
+
+        class PowerUp {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.size = 20;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.angle = 0;
+                this.particles = [];
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.angle += 0.1;
+                if (Math.random() < 0.05 && this.particles.length < 5) {
+                    this.particles.push({ x: 0, y: 0, size: Math.random() * 5 + 2, life: 15 });
+                }
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.life--;
+                    p.size = Math.max(0, p.size - 0.2);
+                    if (p.life <= 0) this.particles.splice(i, 1);
+                }
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    collectibles = collectibles.filter(c => c !== this);
+                }
+            }
+            drawParticles() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                this.particles.forEach(p => {
+                    if (p.size > 0) {
+                        ctx.fillStyle = `rgba(255, 255, ${this.type === 'star' ? 0 : 255}, ${p.life / 15})`;
+                        ctx.beginPath();
+                        ctx.arc(p.x + (Math.random() - 0.5) * 10, p.y + (Math.random() - 0.5) * 10, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.restore();
+            }
+        }
+
+        class CoinPowerUp extends PowerUp {
+            constructor(x, y) { super('coin', x, y); }
+            draw() {
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size / 2);
+                gradient.addColorStop(0, isInverted ? '#0028ff' : '#ffd700');
+                gradient.addColorStop(1, isInverted ? '#001466' : '#c0c0c0');
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class StarPowerUp extends PowerUp {
+            constructor(x, y) { super('star', x, y); }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#ff0000' : '#00ffff';
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                    const outerX = Math.cos(angle) * this.size / 2;
+                    const outerY = Math.sin(angle) * this.size / 2;
+                    const innerX = Math.cos(angle + 2 * Math.PI / 5) * this.size / 4;
+                    const innerY = Math.sin(angle + 2 * Math.PI / 5) * this.size / 4;
+                    if (i === 0) ctx.moveTo(outerX, outerY);
+                    else ctx.lineTo(outerX, outerY);
+                    ctx.lineTo(innerX, innerY);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class OnyxPowerUp extends PowerUp {
+            constructor(x, y) { super('onyx', x, y); }
+            draw() {
+                const pulse = Math.sin(gameTime * 0.1) * 2 + this.size / 2;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.fillStyle = isInverted ? '#fff' : '#000';
+                ctx.beginPath();
+                ctx.moveTo(0, -pulse);
+                ctx.lineTo(pulse / 1.5, 0);
+                ctx.lineTo(0, pulse);
+                ctx.lineTo(-pulse / 1.5, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                this.drawParticles();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 1;
+                this.dx = (Math.random() - 0.5) * 2;
+                this.dy = (Math.random() - 0.5) * 2;
+                this.life = 20;
+            }
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.life--;
+            }
+            draw() {
+                ctx.fillStyle = isInverted ? '#000' : `rgba(255, 255, 255, ${this.life / 20})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class SprayParticle {
+            constructor(x, y, angle, opacity = 0.5, lineWidth = 2) {
+                // Get the direction vector from the angle (direction of the trail)
+                const dirX = Math.cos(angle);
+                const dirY = Math.sin(angle);
+                
+                // Get the opposite flight direction (adding 5% more offset)
+                const oppositeX = -dirX;
+                const oppositeY = -dirY;
+                
+                // Scale offset based on line width (thicker trails = particles further back)
+                // Create a much larger offset to position particles further from the plane
+                // Base offset is now 150-200% of the line width plus a fixed component
+                const offsetScale = 1.5 + Math.random() * 0.5; // 150-200% of line width (increased)
+                const minOffset = 12; // Minimum 12 pixels away (increased)
+                const offsetMagnitude = Math.max(minOffset, lineWidth * offsetScale);
+                
+                // Position particles significantly further along the trail
+                this.x = x + dirX * offsetMagnitude;
+                this.y = y + dirY * offsetMagnitude;
+                
+                // Add additional 5% offset in the opposite direction of flight
+                const additionalOffset = lineWidth * 0.05 * 10; // 5% of line width * 10 for visibility
+                this.x += oppositeX * additionalOffset;
+                this.y += oppositeY * additionalOffset;
+                
+                // Perpendicular spread scales with line width
+                const perpScale = 0.4 + Math.random() * 0.3; // 40-70% of line width for spread (increased)
+                const perpX = -dirY; // Perpendicular to direction
+                const perpY = dirX;
+                const perpOffset = (Math.random() - 0.5) * 2 * lineWidth * perpScale;
+                this.x += perpX * perpOffset;
+                this.y += perpY * perpOffset;
+                
+                // Reversed direction - particles move away from the plane
+                const reverseAngle = angle + Math.PI;
+                // Add more randomness to the spread angle based on trail width
+                const angleVariation = 0.25 + (lineWidth * 0.02); // Wider trails = more angle variation
+                const spreadAngle = reverseAngle + (Math.random() - 0.5) * angleVariation;
+                
+                // Speed scales with line width - thicker trails create faster particles
+                const baseSpeed = 1.2 + Math.random() * 1.2; // 1.2-2.4 base speed (increased)
+                const speedScale = 0.25; // Speed multiplier based on line width (increased)
+                const speed = baseSpeed + (lineWidth * speedScale);
+                this.dx = Math.cos(spreadAngle) * speed;
+                this.dy = Math.sin(spreadAngle) * speed;
+                
+                // Size scaled with trail width - SIGNIFICANTLY LARGER
+                // Thicker trails = larger particles (90-130% of line width - greatly increased)
+                const sizeScale = 0.9 + Math.random() * 0.4;
+                this.size = Math.max(2.5, lineWidth * sizeScale); // Minimum size increased to 2.5
+                
+                // Lifespan scaled with line width - thicker trails last longer
+                const baseLife = 10; // Increased base lifespan
+                const lifeScale = lineWidth * 0.6; // Increased lifespan scaling
+                this.maxLife = baseLife + lifeScale + Math.random() * 6;
+                this.life = this.maxLife;
+                this.opacity = opacity * 1.1; // Slightly increased opacity for better visibility
+                
+                // Drift scales with line width
+                this.drift = (Math.random() - 0.5) * (0.15 + lineWidth * 0.06);
+            }
+            
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                // Add slight drift
+                this.x += this.drift;
+                this.life--;
+                
+                // Faster size reduction for larger particles but more gradual overall
+                const sizeReductionRate = this.size > 4 ? 0.93 : 0.95;
+                this.size = Math.max(0.3, this.size * sizeReductionRate);
+            }
+            
+            draw() {
+                const alpha = (this.life / this.maxLife) * this.opacity;
+                ctx.fillStyle = isInverted ? `rgba(0, 0, 0, ${alpha})` : `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Twinkle {
+            constructor(x, y, text) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.life = 30;
+                this.size = 10;
+            }
+            update() {
+                this.life--;
+                this.size += 1;
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.life / 30})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                if (this.text) {
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = `rgba(255, 255, 0, ${this.life / 30})`;
+                    ctx.fillText(this.text, this.x + 10, this.y - 10);
+                }
+                ctx.restore();
+            }
+        }
+
+        class ShootFlash {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.life = 10;
+                this.size = 40;
+            }
+            update() {
+                this.life--;
+                this.size += 5;
+            }
+            draw() {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                gradient.addColorStop(0, `rgba(255, 255, 200, ${this.life / 10})`);
+                gradient.addColorStop(0.5, `rgba(255, 200, 100, ${this.life / 20})`);
+                gradient.addColorStop(1, 'rgba(255, 100, 50, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Message {
+            constructor(text, x, y, color = '#fff', size = 16, duration = 60) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = size;
+                this.life = duration;
+                this.maxLife = duration;
+                this.dy = -1; // Move upward
+            }
+            
+            update() {
+                this.life--;
+                this.y += this.dy;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.font = `bold ${this.size}px Arial`;
+                ctx.fillStyle = `rgba(0, 0, 0, 0.7)`;
+                ctx.fillText(this.text, this.x + 2, this.y + 2);
+                ctx.fillStyle = `rgba(${this.color.replace('#', '').match(/../g).map(h => parseInt(h, 16)).join(', ')}, ${this.life / this.maxLife})`;
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        class CenterMessage extends Message {
+            constructor(text, color = '#ffffff', size = 30, duration = 180) {
+                // Convert text to uppercase for retro style
+                super(text.toUpperCase(), 0, 0, color, size, duration);
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.originalSize = size;
+                this.scale = 0.8; // Start slightly smaller
+                this.maxScale = 1.1; // Maximum scale
+                this.scaleDirection = 0.03; // Faster initial growth
+                this.colorCycle = 0; // For color cycling effect
+                // Add a debug log to confirm message creation
+                console.log("Created center message:", text, "- Will display at", this.x, this.y);
+            }
+            
+            update() {
+                this.life--;
+                this.colorCycle += 0.1; // Speed of color cycling
+                
+                // Simple size change animation - grow quickly then stay at size
+                if (this.scale < this.maxScale && this.life > this.maxLife * 0.8) {
+                    this.scale += this.scaleDirection;
+                    if (this.scale >= this.maxScale) {
+                        this.scale = this.maxScale;
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.scale, this.scale);
+                
+                // Text with pixel font effect
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Debug log for drawing center messages
+                console.log("Drawing center message:", this.text, "Life:", this.life, "Max life:", this.maxLife);
+                
+                // Use Visitor font with fallbacks
+                ctx.font = `bold ${this.originalSize}px "Visitor", "Press Start 2P", monospace`;
+                
+                // Faster fade out - use a steeper curve for opacity
+                const opacity = Math.min(1, this.life / (this.maxLife * 0.5));
+                
+                // Create a rainbow color effect
+                const hue = (this.colorCycle * 15) % 360;
+                const saturation = 100;
+                const lightness = 50;
+                
+                // 3D effect with pixel-like steps
+                for (let i = 4; i > 0; i--) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * opacity})`;
+                    ctx.fillText(this.text, i, i); // Deeper shadow offset with pixel steps
+                }
+                
+                // Main text with rainbow color effect
+                ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
+                ctx.fillText(this.text, 0, 0);
+                
+                // Add a white highlight for that retro pixel look
+                ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * opacity})`;
+                ctx.fillText(this.text, -1, -1);
+                
+                ctx.restore();
+            }
+        }
+
+        function generateCityscape() {
+            const buildingCount = Math.ceil(canvas.width / 100) + 5;
+            cityFront = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 100,
+                width: Math.random() * 80 + 20,
+                height: Math.random() * 100 + 50
+            }));
+            cityMid = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 120,
+                width: Math.random() * 100 + 30,
+                height: Math.random() * 80 + 30
+            }));
+            cityFar = Array(buildingCount).fill().map((_, i) => ({
+                x: i * 150,
+                width: Math.random() * 120 + 40,
+                height: Math.random() * 60 + 20
+            }));
+        }
+
+        clouds = Array(8).fill().map(() => new Cloud());
+        generateCityscape();
+
+        function startGame() {
+            console.log("Starting game...");
+            startScreen.style.opacity = '0';
+            setTimeout(() => startScreen.style.display = 'none', 500);
+            canvas.classList.add('active');
+            scoreDisplay.style.display = 'block';
+            upgradesDiv.style.display = 'flex';
+            cheatcodeInput.style.display = 'block';
+            soundToggle.style.display = 'flex';
+            gameOverDiv.style.display = 'none';
+
+            // Reset all game variables
+            gameStarted = true;
+            gameOver = false;
+            gameTime = 0;
+            score = 0;
+            sizeLevel = 0;
+            styleLevel = 0;
+            shootLevel = 0;
+            starTimer = 0;
+            onyxTimer = 0;
+            onyxTextX = canvas.width;
+            isInverted = false;
+            mouseX = -100;
+            mouseY = -100;
+            targetMode = false;
+            targetPlane = null;
+            targetRemaining = false;
+            targetPosition = { x: 0, y: 0 };
+            shots = [];
+            shotCount = 0;
+            shotCooldown = 0;
+            isMouseDown = false;
+            chemtrails = [];
+            planes = [new Plane()];
+            if (Math.random() > 0.5) planes.push(new Plane());
+            particles = [];
+            sprayParticles = [];
+            collectibles = [];
+            twinkleEffects = [];
+            explosions = [];
+            messages = [];
+            comboCount = 0;
+            skyCleanMessageShown = false;
+            gameHasStarted = false;
+            schwabMode = false;
+            slowMode = false; // Reset slow mode when starting a new game
+            cheatcodeInput.value = '';
+            cheatcodeInput.placeholder = 'CHEAT';
+            soundEnabled = true;
+            hitIndicators = [];
+
+            // Set initial sound button state
+            soundToggle.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+                    <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            `;
+
+            try {
+                // Reset and restart music properly
+                music.pause();
+                schwurblerMusic.pause();
+                skyMusic.pause();
+                music.currentTime = 0;
+                schwurblerMusic.currentTime = 0;
+                skyMusic.currentTime = 0;
+                
+                scoreDisplay.textContent = `Score: ${score}`;
+                updateUpgrades();
+                if (soundEnabled) {
+                    music.play();
+                    twinkleSound.play();
+                }
+            } catch (e) {
+                console.error("Error during game start:", e);
+            }
+        }
+
+        startBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', () => {
+            // Stop sky music when starting a new game
+            if (skyMusic) {
+                skyMusic.pause();
+                skyMusic.currentTime = 0;
+            }
+            startGame();
+        });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            
+            // Update the SVG based on sound state
+            if (soundEnabled) {
+                soundToggle.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+                        <path d="M12 7C13.1 7.67 14 9.23 14 10.5C14 11.77 13.1 13.33 12 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M15 4C17.1 5.34 18.5 7.8 18.5 10.5C18.5 13.2 17.1 15.66 15 17" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                `;
+            } else {
+                soundToggle.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 7H5L9 3V17L5 13H2V7Z" fill="white"/>
+                        <line x1="12" y1="7" x2="18" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="18" y1="7" x2="12" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                `;
+            }
+            
+            try {
+                if (soundEnabled) {
+                    if (!gameOver) {
+                        if (onyxTimer > 0) {
+                            schwurblerMusic.play();
+                        } else {
+                            music.play();
+                        }
+                    }
+                } else {
+                    music.pause();
+                    schwurblerMusic.pause();
+                    twinkleSound.pause();
+                    shotSound.pause();
+                    explodeSound.pause();
+                }
+            } catch (e) {
+                console.error("Error toggling sound:", e);
+            }
+        });
+
+        canvas.addEventListener('mousemove', e => { 
+            mouseX = e.offsetX; 
+            mouseY = e.offsetY; 
+            if (shootLevel > 0 && gameStarted && !gameOver) {
+                targetMode = false;
+                targetPlane = null;
+                for (let i = planes.length - 1; i >= 0; i--) {
+                    const plane = planes[i];
+                    const width = 75.3 * plane.sizeFactor;
+                    const height = 32.1 * plane.sizeFactor;
+                    const targetWidth = width * 1.4;
+                    const targetHeight = height * 1.4;
+                    if (mouseX >= plane.x - targetWidth / 2 && mouseX <= plane.x + targetWidth / 2 &&
+                        mouseY >= plane.y - targetHeight / 2 && mouseY <= plane.y + targetHeight / 2) {
+                        targetMode = true;
+                        targetPlane = plane;
+                        break;
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            isMouseDown = true;
+            fireShot();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        function fireShot() {
+            if (shootLevel > 0 && gameStarted && !gameOver && targetMode && targetPlane && shotCooldown <= 0) {
+                try {
+                    const offset = 10;
+                    shots.push(new Shot(mouseX + offset, mouseY, targetPlane.x, targetPlane.y));
+                    shots.push(new Shot(mouseX - offset, mouseY, targetPlane.x, targetPlane.y));
+                    shotCooldown = 6;
+                    
+                    // Add a localized flash effect at the cursor position
+                    particles.push(new ShootFlash(mouseX, mouseY));
+                    
+                    if (soundEnabled) {
+                        try { 
+                            const shotSoundClone = new Audio('./assets/shot.mp3');
+                            shotSoundClone.volume = 0.7;
+                            shotSoundClone.play();
+                        } catch (e) { 
+                            console.log("Shot sound failed:", e);
+                            try {
+                                shotSound.currentTime = 0;
+                                shotSound.play();
+                            } catch (e2) {
+                                console.log("Fallback shot sound failed:", e2);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error firing shot:", e);
+                    shots = [];
+                    shotCooldown = 0;
+                }
+            }
+        }
+
+        sizeBtn.addEventListener('click', () => {
+            if (sizeLevel < upgradeCosts.length && score >= upgradeCosts[sizeLevel]) {
+                score -= upgradeCosts[sizeLevel];
+                sizeLevel++;
+                updateUpgrades();
+                scoreDisplay.textContent = `Score: ${score}`;
+                
+                // Add message for upgrade
+                messages.push(new CenterMessage(`Size Upgraded!`, '#fed430', 35, 150));
+            }
+        });
+        styleBtn.addEventListener('click', () => {
+            if (styleLevel < upgradeCosts.length && score >= upgradeCosts[styleLevel]) {
+                score -= upgradeCosts[styleLevel];
+                styleLevel++;
+                updateUpgrades();
+                scoreDisplay.textContent = `Score: ${score}`;
+                
+                // Add message for upgrade
+                messages.push(new CenterMessage(`Style Upgraded!`, '#fd491e', 35, 150));
+            }
+        });
+        shootBtn.addEventListener('click', () => {
+            if (shootLevel === 0 && score >= 250000) {
+                score -= 250000;
+                shootLevel = 1;
+                updateUpgrades();
+                scoreDisplay.textContent = `Score: ${score}`;
+                
+                // Add message for upgrade
+                messages.push(new CenterMessage(`Shoot Unlocked!`, '#4d0e7e', 35, 150));
+            }
+        });
+
+        cheatcodeInput.addEventListener('keydown', e => {
+            if (!gameStarted || gameOver) return;
+            if (e.key === 'Enter') {
+                try {
+                    const cheatInput = cheatcodeInput.value.trim().toUpperCase();
+                    console.log(`Cheat entered: ${cheatInput}`);
+                    switch (cheatInput) {
+                        case 'REICH':
+                            score += 1000000;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            updateUpgrades();
+                            break;
+                        case 'END':
+                            gameOver = true;
+                            gameOverText.innerHTML = `<h1>GAME OVER</h1><p class="points">Points: ${score}</p><p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>`;
+                            gameOverDiv.style.display = 'flex';
+                            planes = [];
+                            chemtrails = [];
+                            particles = [];
+                            collectibles = [];
+                            twinkleEffects = [];
+                            shots = [];
+                            explosions = [];
+                            try { 
+                                music.pause(); 
+                                schwurblerMusic.pause();
+                                // Play sky.mp3 on game over
+                                if (soundEnabled) {
+                                    skyMusic.currentTime = 0;
+                                    skyMusic.volume = 1.0; // Ensure volume is set to full
+                                    skyMusic.play().catch(e => console.log("Game over audio failed:", e));
+                                }
+                            } catch (e) { console.log("Audio stop failed:", e); }
+                            break;
+                        case 'ONYX':
+                            onyxTimer = 840;
+                            onyxTextX = canvas.width;
+                            isInverted = true;
+                            try { 
+                                music.pause(); 
+                                schwurblerMusic.play(); 
+                            } catch (e) { console.log("Onyx audio failed:", e); }
+                            break;
+                        case 'DEBUG':
+                            debugMessages();
+                            break;
+                        case 'SCHWAB':
+                            // Toggle Schwab mode
+                            schwabMode = !schwabMode;
+                            
+                            // Show message about mode change
+                            const schwabMsg = new CenterMessage(
+                                schwabMode ? "SCHWAB MODE ACTIVATED!" : "SCHWAB MODE DEACTIVATED!", 
+                                '#ff0000', 
+                                40, 
+                                180
+                            );
+                            messages.push(schwabMsg);
+                            console.log("Schwab mode " + (schwabMode ? "activated" : "deactivated"));
+                            break;
+                        case 'SLOW':
+                            // Toggle slow mode for plane spawning
+                            slowMode = !slowMode;
+                            
+                            // Show message about mode change
+                            const slowMsg = new CenterMessage(
+                                slowMode ? "SLOW MODE ACTIVATED!" : "SLOW MODE DEACTIVATED!", 
+                                '#00ffff', 
+                                40, 
+                                180
+                            );
+                            messages.push(slowMsg);
+                            console.log("Slow mode " + (slowMode ? "activated" : "deactivated") + " - Plane spawning reduced by 90%");
+                            break;
+                        case 'COMBO':
+                            // Test combo message
+                            const testComboMsg = new CenterMessage("NICE COMBO! +5000", '#ffffff', 40, 180);
+                            messages.push(testComboMsg);
+                            console.log("Added test combo message");
+                            break;
+                        case 'CLEAN':
+                            // Remove all planes and chemtrails
+                            planes = [];
+                            chemtrails = [];
+                            
+                            // Clear any explosions, particles, and shots
+                            explosions = [];
+                            particles = [];
+                            shots = [];
+                            sprayParticles = [];
+                            
+                            console.log("Removed all planes and chemtrails");
+                            
+                            // Show clean sky message
+                            messages = messages.filter(m => !(m instanceof CenterMessage && m.text.includes("SKY"))); // Remove any existing sky messages
+                            const cleanSkyMsg = new CenterMessage("THE SKY IS CLEAN!", '#ffffff', 50, 240);
+                            messages.push(cleanSkyMsg);
+                            console.log("Added clean sky message and removed all planes/trails");
+                            
+                            // Add bonus points for clean sky
+                            const cleanSkyBonus = 1000;
+                            score += cleanSkyBonus;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            updateUpgrades();
+                            
+                            // Reset combo counter
+                            comboCount = 0;
+                            
+                            // Reset target mode
+                            targetMode = false;
+                            targetPlane = null;
+                            targetRemaining = false;
+                            shotCount = 0;
+                            shotCooldown = 0;
+                            
+                            // Set sky clean flag
+                            skyCleanMessageShown = true;
+                            
+                            // Play the best.mp3 sound, then revert to background music
+                            if (soundEnabled) {
+                                try {
+                                    // Temporarily pause background music
+                                    if (music.played) music.pause();
+                                    if (schwurblerMusic.played) schwurblerMusic.pause();
+                                    
+                                    // Play best sound
+                                    bestSound.currentTime = 0;
+                                    bestSound.play();
+                                    
+                                    // Set up an event to resume background music when best sound ends
+                                    bestSound.onended = () => {
+                                        console.log("Best sound finished, returning to background music");
+                                        if (onyxTimer > 0) {
+                                            schwurblerMusic.play();
+                                        } else {
+                                            music.play();
+                                        }
+                                    };
+                                } catch (e) {
+                                    console.log("Best sound failed:", e);
+                                    // If best sound fails, ensure music continues
+                                    if (onyxTimer > 0) {
+                                        schwurblerMusic.play();
+                                    } else {
+                                        music.play();
+                                    }
+                                }
+                            }
+                            break;
+                        case 'CLEANALL':
+                            // Remove all planes and chemtrails
+                            planes = [];
+                            chemtrails = [];
+                            
+                            // Clear any explosions, particles, and shots
+                            explosions = [];
+                            particles = [];
+                            shots = [];
+                            sprayParticles = [];
+                            
+                            console.log("Removed all planes and chemtrails");
+                            
+                            // Show clean sky message
+                            messages = messages.filter(m => !(m instanceof CenterMessage && m.text.includes("CLEARED"))); // Remove any existing cleared messages
+                            const cleanAllMsg = new CenterMessage("ALL CLEARED!", '#00ff00', 50, 240);
+                            messages.push(cleanAllMsg);
+                            
+                            // Add bonus points
+                            const cleanBonus = 2000;
+                            score += cleanBonus;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            
+                            // Reset combo counter
+                            comboCount = 0;
+                            
+                            // Reset target mode
+                            targetMode = false;
+                            targetPlane = null;
+                            targetRemaining = false;
+                            shotCount = 0;
+                            shotCooldown = 0;
+                            
+                            // Force sky clean message to be shown next time
+                            skyCleanMessageShown = false;
+                            
+                            break;
+                        case 'FORCECOMBO':
+                            // Force combo to 5 to trigger the combo message
+                            comboCount = 5;
+                            console.log("Forced combo to 5");
+                            const comboBonus = 5000;
+                            score += comboBonus;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            
+                            // Force a new center message for combo with more visibility
+                            const forceComboMsg = new CenterMessage(`NICE COMBO! +${comboBonus}`, '#ffffff', 40, 180);
+                            messages = messages.filter(m => !(m instanceof CenterMessage && m.text.includes("COMBO"))); // Remove any existing combo messages
+                            messages.push(forceComboMsg);
+                            console.log("Added forced combo message to messages array. Current messages:", messages.length);
+                            
+                            // Force immediate display of the message
+                            forceComboMsg.draw();
+                            
+                            comboCount = 0; // Reset after awarding bonus
+                            break;
+                        default:
+                            console.log("Invalid cheat code");
+                            break;
+                    }
+                    cheatcodeInput.value = '';
+                    cheatcodeInput.placeholder = 'CHEAT';
+                } catch (e) {
+                    console.error("Error processing cheat:", e);
+                    cheatcodeInput.value = '';
+                    cheatcodeInput.placeholder = 'CHEAT';
+                }
+            }
+        });
+
+        function updateUpgrades() {
+            try {
+                sizeBtn.classList.toggle('active', sizeLevel < upgradeCosts.length && score >= upgradeCosts[sizeLevel]);
+                styleBtn.classList.toggle('active', styleLevel < upgradeCosts.length && score >= upgradeCosts[styleLevel]);
+                shootBtn.classList.toggle('active', shootLevel === 0 && score >= 250000);
+            } catch (e) {
+                console.error("Error updating upgrades:", e);
+            }
+        }
+
+        function animate() {
+            if (!ctx) {
+                console.error("Canvas context not initialized!");
+                return;
+            }
+
+            try {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, isInverted ? '#b2f181' : '#4d0e7e');
+                gradient.addColorStop(0.5, isInverted ? '#02b6e1' : '#fd491e');
+                gradient.addColorStop(1, isInverted ? '#012bcf' : '#fed430');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                clouds.forEach(cloud => {
+                    cloud.update();
+                    cloud.draw();
+                });
+
+                if (gameStarted && !gameOver) {
+                    // Set gameHasStarted to true after a short delay
+                    if (gameTime > 60) {
+                        gameHasStarted = true;
+                    }
+                    
+                    if (isMouseDown && shotCooldown <= 0) {
+                        fireShot();
+                    }
+                    
+                    // Check for target mode on each frame
+                    if (shootLevel > 0) {
+                        targetMode = false;
+                        targetPlane = null;
+                        for (let i = planes.length - 1; i >= 0; i--) {
+                            const plane = planes[i];
+                            const width = 75.3 * plane.sizeFactor;
+                            const height = 32.1 * plane.sizeFactor;
+                            const targetWidth = width * 1.4;
+                            const targetHeight = height * 1.4;
+                            if (mouseX >= plane.x - targetWidth / 2 && mouseX <= plane.x + targetWidth / 2 &&
+                                mouseY >= plane.y - targetHeight / 2 && mouseY <= plane.y + targetHeight / 2) {
+                                targetMode = true;
+                                targetPlane = plane;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    for (let i = chemtrails.length - 1; i >= 0; i--) {
+                        const trail = chemtrails[i];
+                        const dist = pointLineDistance(mouseX, mouseY, trail.x1, trail.y1, trail.x2, trail.y2);
+                        const cleanupDistance = starTimer > 0 ? cursorSizes[sizeLevel] / 1.5 : cursorSizes[sizeLevel] / 3;
+                        if (dist < cleanupDistance) {
+                            for (let j = 0; j < 5; j++) {
+                                const t = j / 4;
+                                particles.push(new Particle(trail.x1 + (trail.x2 - trail.x1) * t, trail.y1 + (trail.y2 - trail.y1) * t));
+                            }
+                            score += trail.points;
+                            chemtrails.splice(i, 1);
+                            
+                            // Log when chemtrails are removed
+                            if (chemtrails.length % 5 === 0 || chemtrails.length < 5) {
+                                console.log("Chemtrail removed! Remaining:", chemtrails.length);
+                                if (chemtrails.length === 0) {
+                                    console.log("ALL CHEMTRAILS REMOVED! Sky should be clean now.");
+                                }
+                            }
+                            
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            updateUpgrades();
+                        } else {
+                            ctx.strokeStyle = isInverted ? '#000' : '#fff';
+                            ctx.lineWidth = trail.lineWidth;
+                            ctx.beginPath();
+                            ctx.moveTo(trail.x1, trail.y1);
+                            ctx.lineTo(trail.x2, trail.y2);
+                            ctx.stroke();
+                        }
+                    }
+
+                    // Update and draw spray particles BEFORE planes so they appear behind planes
+                    for (let i = sprayParticles.length - 1; i >= 0; i--) {
+                        const spray = sprayParticles[i];
+                        spray.update();
+                        spray.draw();
+                        if (spray.life <= 0) sprayParticles.splice(i, 1);
+                    }
+
+                    planes.forEach(plane => {
+                        plane.update();
+                        plane.draw();
+                    });
+
+                    for (let i = shots.length - 1; i >= 0; i--) {
+                        if (targetPlane) {
+                            shots[i].update();
+                            shots[i].draw();
+                        } else {
+                            shots = [];
+                            break;
+                        }
+                    }
+
+                    for (let i = explosions.length - 1; i >= 0; i--) {
+                        const explosion = explosions[i];
+                        explosion.update();
+                        explosion.draw();
+                        if (explosion.life <= 0) explosions.splice(i, 1);
+                    }
+
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const particle = particles[i];
+                        particle.update();
+                        particle.draw();
+                        if (particle.life <= 0) particles.splice(i, 1);
+                    }
+                    
+                    // Update and draw hit indicators
+                    for (let i = hitIndicators.length - 1; i >= 0; i--) {
+                        hitIndicators[i].update();
+                        hitIndicators[i].draw();
+                        if (hitIndicators[i].life <= 0) {
+                            hitIndicators.splice(i, 1);
+                        }
+                    }
+                    
+                    // Check if sky is clean (no chemtrails) within the visible area
+                    if (gameHasStarted && chemtrails.length === 0 && !skyCleanMessageShown) {
+                        console.log("Sky clean condition met! Chemtrails:", chemtrails.length, "Game started:", gameHasStarted);
+                        
+                        // Force a new center message for clean sky with high visibility
+                        const skyMsg = new CenterMessage("THE SKY IS CLEAN!", '#ffffff', 50, 240);
+                        messages.push(skyMsg);
+                        console.log("Added sky clean message to messages array. Current messages:", messages.length);
+                        
+                        // Force immediate display of the message
+                        skyMsg.draw();
+                        
+                        skyCleanMessageShown = true;
+                        
+                        // Add bonus points for clean sky
+                        const cleanSkyBonus = 1000;
+                        score += cleanSkyBonus;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        updateUpgrades();
+                        
+                        // Play the best.mp3 sound, then revert to background music
+                        if (soundEnabled) {
+                            try {
+                                // Temporarily pause background music
+                                if (music.played) music.pause();
+                                if (schwurblerMusic.played) schwurblerMusic.pause();
+                                
+                                // Play best sound
+                                bestSound.currentTime = 0;
+                                bestSound.play();
+                                
+                                // Set up an event to resume background music when best sound ends
+                                bestSound.onended = () => {
+                                    console.log("Best sound finished, returning to background music");
+                                    if (onyxTimer > 0) {
+                                        schwurblerMusic.play();
+                                    } else {
+                                        music.play();
+                                    }
+                                };
+                            } catch (e) {
+                                console.log("Best sound failed:", e);
+                                // If best sound fails, ensure music continues
+                                if (onyxTimer > 0) {
+                                    schwurblerMusic.play();
+                                } else {
+                                    music.play();
+                                }
+                            }
+                        }
+                    } else if (chemtrails.length > 0) {
+                        // Log when sky is not clean
+                        if (gameTime % 60 === 0) { // Only log every second to avoid spam
+                            console.log("Sky not clean. Chemtrails:", chemtrails.length, "Game started:", gameHasStarted);
+                        }
+                        skyCleanMessageShown = false;
+                    }
+
+                    if (gameTime === 1800 + Math.floor(Math.random() * 600) && !onyxTimer) {
+                        const x = Math.random() * canvas.width;
+                        const y = Math.random() * canvas.height * 0.8;
+                        collectibles.push(new OnyxPowerUp(x, y));
+                    } else if (Math.random() < 0.003 && onyxTimer) {
+                        const x = Math.random() * canvas.width;
+                        const y = Math.random() * canvas.height * 0.8;
+                        const rand = Math.random();
+                        if (rand < 0.05) collectibles.push(new OnyxPowerUp(x, y));
+                        else if (rand < 0.5) collectibles.push(new StarPowerUp(x, y));
+                        else collectibles.push(new CoinPowerUp(x, y));
+                    }
+
+                    for (let i = collectibles.length - 1; i >= 0; i--) {
+                        const powerUp = collectibles[i];
+                        if (!powerUp) continue;
+                        powerUp.update();
+                        powerUp.draw();
+                        const dist = Math.hypot(mouseX - powerUp.x, mouseY - powerUp.y);
+                        if (dist < powerUp.size / 2 + cursorSizes[sizeLevel] / 2) {
+                            twinkleEffects.push(new Twinkle(powerUp.x, powerUp.y, powerUp.type === 'coin' ? '+500' : null));
+                            if (soundEnabled) {
+                                try { twinkleSound.play(); } catch (e) { console.log("Twinkle sound failed:", e); }
+                            }
+                            
+                            // Add message for power-up collection
+                            let message = "";
+                            let color = "#fff";
+                            
+                            switch (powerUp.type) {
+                                case 'coin': 
+                                    score += 500; 
+                                    message = "Coin +500!";
+                                    color = "#ffd700";
+                                    break;
+                                case 'star': 
+                                    starTimer = 600; 
+                                    message = "Star Power!";
+                                    color = "#00ffff";
+                                    break;
+                                case 'onyx': 
+                                    onyxTimer = 840;
+                                    isInverted = true;
+                                    message = "Onyx Power!";
+                                    color = "#ff00ff";
+                                    if (soundEnabled) {
+                                        try { 
+                                            music.pause(); 
+                                            schwurblerMusic.play(); 
+                                        } catch (e) { console.log("Onyx audio failed:", e); }
+                                    }
+                                    break;
+                            }
+                            
+                            // Use CenterMessage for power-ups
+                            if (powerUp.type !== 'coin') {
+                                messages.push(new CenterMessage(message, color, 35, 150));
+                            } else {
+                                messages.push(new Message(message, powerUp.x, powerUp.y - 30, color, 18, 90));
+                            }
+                            
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            updateUpgrades();
+                            collectibles.splice(i, 1);
+                        }
+                    }
+
+                    // Update and draw messages
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                        const message = messages[i];
+                        if (!message) {
+                            console.log("Found undefined message at index:", i);
+                            messages.splice(i, 1);
+                            continue;
+                        }
+                        
+                        message.update();
+                        
+                        // Log message processing
+                        if (message instanceof CenterMessage && gameTime % 30 === 0) { // Log every half second
+                            console.log("Processing center message:", message.text, "Life:", message.life, "Max life:", message.maxLife);
+                        }
+                        
+                        // Ensure center messages are always drawn on top
+                        if (message instanceof CenterMessage) {
+                            // Draw with extra visibility
+                            ctx.save();
+                            ctx.globalAlpha = 1.0; // Force full opacity for center messages
+                            if (typeof message.draw === 'function') {
+                                message.draw();
+                            } else {
+                                console.log("Message missing draw method:", message);
+                            }
+                            ctx.restore();
+                        } else {
+                            if (typeof message.draw === 'function') {
+                                message.draw();
+                            } else {
+                                console.log("Message missing draw method:", message);
+                            }
+                        }
+                        
+                        if (message.life <= 0) {
+                            console.log("Message expired:", message.text);
+                            messages.splice(i, 1);
+                        }
+                    }
+
+                    for (let i = twinkleEffects.length - 1; i >= 0; i--) {
+                        const twinkle = twinkleEffects[i];
+                        twinkle.update();
+                        twinkle.draw();
+                        if (twinkle.life <= 0) twinkleEffects.splice(i, 1);
+                    }
+
+                    if (starTimer > 0) starTimer--;
+                    if (onyxTimer > 0) {
+                        onyxTimer--;
+                        if (onyxTimer === 0) {
+                            isInverted = false;
+                            if (soundEnabled) {
+                                try { 
+                                    music.play(); 
+                                    schwurblerMusic.pause(); 
+                                    schwurblerMusic.currentTime = 0; 
+                                } catch (e) { console.log("Audio revert failed:", e); }
+                            }
+                        }
+                    }
+
+                    if (shotCooldown > 0) shotCooldown--;
+
+                    if (isInverted) {
+                        ctx.save();
+                        ctx.font = `${canvas.width / 2.5}px Impact`;
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                        ctx.textAlign = 'left';
+                        const text = 'DAMN IT FEELS GOOD TO BE A SCHWURBLER';
+                        ctx.fillText(text, onyxTextX, canvas.height * 0.75);
+                        onyxTextX -= 7.5;
+                        if (onyxTextX < -ctx.measureText(text).width) onyxTextX = canvas.width;
+                        ctx.restore();
+                    }
+
+                    gameTime++;
+                    if (gameTime % 150 === 0 && planes.length < 8) {
+                        // In slow mode, spawn planes 90% less frequently (only 10% chance to spawn)
+                        if (!slowMode || Math.random() < 0.1) {
+                            const newPlane = new Plane();
+                            planes.push(newPlane);
+                            console.log("Plane spawned! Total planes:", planes.length, slowMode ? "(slow mode)" : "");
+                        } else {
+                            console.log("Plane spawn skipped due to slow mode");
+                        }
+                    }
+
+                    let totalTrailLength = chemtrails.reduce((sum, t) => sum + Math.hypot(t.x2 - t.x1, t.y2 - t.y1), 0);
+                    if ((totalTrailLength * 3) / (canvas.width * canvas.height) > 0.2) {
+                        gameOver = true;
+                        gameOverText.innerHTML = `<h1>GAME OVER</h1><p class="points">Points: ${score}</p><p class="message">Deutschland ist komplett verseucht<br>und DU allein bist Schuld!</p>`;
+                        gameOverDiv.style.display = 'flex';
+                        planes = [];
+                        chemtrails = [];
+                        particles = [];
+                        collectibles = [];
+                        twinkleEffects = [];
+                        shots = [];
+                        explosions = [];
+                        try { 
+                            music.pause(); 
+                            schwurblerMusic.pause();
+                            // Play sky.mp3 on game over
+                            if (soundEnabled) {
+                                skyMusic.currentTime = 0;
+                                skyMusic.volume = 1.0; // Ensure volume is set to full
+                                skyMusic.play().catch(e => console.log("Game over audio failed:", e));
+                            }
+                        } catch (e) { console.log("Game over audio failed:", e); }
+                    }
+                }
+
+                ctx.fillStyle = isInverted ? '#aaa' : '#555';
+                cityFar.forEach(b => {
+                    b.x -= 0.25;
+                    if (b.x + b.width < 0) b.x = canvas.width;
+                    if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+                });
+                ctx.fillStyle = isInverted ? '#ccc' : '#333';
+                cityMid.forEach(b => {
+                    b.x -= 0.5;
+                    if (b.x + b.width < 0) b.x = canvas.width;
+                    if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+                });
+                ctx.fillStyle = isInverted ? '#fff' : '#000';
+                cityFront.forEach(b => {
+                    b.x -= 1;
+                    if (b.x + b.width < 0) b.x = canvas.width;
+                    if (b.x < canvas.width) ctx.fillRect(b.x, canvas.height - b.height, b.width, b.height);
+                });
+
+                if (mouseX >= 0 && mouseX <= canvas.width && mouseY >= 0 && mouseY <= canvas.height && !gameOver) {
+                    const size = cursorSizes[sizeLevel];
+                    ctx.save();
+                    if ((targetMode && targetPlane) || targetRemaining) {
+                        const targetSize = size * 1.5;
+                        ctx.strokeStyle = '#f00';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(mouseX, mouseY, targetSize / 3, 0, Math.PI * 2);
+                        ctx.moveTo(mouseX - targetSize / 2, mouseY);
+                        ctx.lineTo(mouseX + targetSize / 2, mouseY);
+                        ctx.moveTo(mouseX, mouseY - targetSize / 2);
+                        ctx.lineTo(mouseX, mouseY + targetSize / 2);
+                        ctx.stroke();
+                    } else {
+                        const img = cursorImgs[sizeLevel];
+                        if (img.complete && img.naturalWidth) {
+                            ctx.drawImage(img, mouseX - size / 2, mouseY - size / 2, size, size);
+                        } else {
+                            ctx.fillStyle = isInverted ? '#000' : cursorColors[styleLevel];
+                            ctx.fillRect(mouseX - size / 2, mouseY - size / 2, size, size);
+                        }
+                    }
+                    ctx.restore();
+                }
+            } catch (e) {
+                console.error("Error in game loop:", e);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function pointLineDistance(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const numerator = ((px - x1) * dx + (py - y1) * dy);
+            const denominator = (dx * dx + dy * dy);
+            const t = Math.max(0, Math.min(1, numerator / denominator));
+            const closestX = x1 + t * dx;
+            const closestY = y1 + t * dy;
+            return Math.hypot(px - closestX, py - closestY);
+        }
+
+        function waitForAssets(callback) {
+            const assets = [planeImg, planerImg, schwabImg, cloudImgs[0], cloudImgs[1], ...cursorImgs, ...explosionFrames];
+            let loaded = 0;
+            const total = assets.length;
+
+            function checkLoaded() {
+                loaded++;
+                if (loaded === total) {
+                    console.log("All assets loaded, starting game loop...");
+                    callback();
+                }
+            }
+
+            assets.forEach(img => {
+                if (img.complete && img.naturalWidth) {
+                    checkLoaded();
+                } else {
+                    img.onload = checkLoaded;
+                    img.onerror = () => {
+                        console.warn(`Failed to load ${img.src}, proceeding with placeholder`);
+                        checkLoaded();
+                    };
+                }
+            });
+        }
+
+        canvas.style.cursor = 'none';
+        console.log("Grok's Chemtrail Madness - Initializing...");
+        waitForAssets(() => {
+            console.log("Grok's Chemtrail Madness - Ready to soar!");
+            animate();
+        });
+
+        // Add a debug function to check if messages are being processed
+        function debugMessages() {
+            console.log("Current messages:", messages.length);
+            console.log("Combo count:", comboCount);
+            console.log("Sky clean shown:", skyCleanMessageShown);
+            console.log("Chemtrails count:", chemtrails.length);
+            console.log("Game has started:", gameHasStarted);
+            console.log("Game time:", gameTime);
+            
+            // Test font rendering with a temporary message
+            const testMsg = new CenterMessage("TEST MESSAGE", '#ffffff', 40, 180);
+            messages.push(testMsg);
+            console.log("Added test message");
+            
+            // Try with Arial font as a fallback test
+            setTimeout(() => {
+                const arialMsg = new Message("ARIAL TEST", canvas.width/2, canvas.height/2, '#ff0000', 40, 180);
+                messages.push(arialMsg);
+                console.log("Added Arial test message");
+            }, 1000);
+        }
+
+        // Add a font loading check
+        document.fonts.ready.then(() => {
+            console.log("Fonts loaded:");
+            document.fonts.forEach(font => {
+                console.log(`- ${font.family} (${font.loaded ? 'loaded' : 'not loaded'})`);
+            });
+            
+            // Test if Visitor font is available
+            if (document.fonts.check('1em "Visitor"')) {
+                console.log("Visitor font is available!");
+            } else {
+                console.log("Visitor font is NOT available! Using fallbacks.");
+            }
+        });
+
+        class HitIndicator {
+            constructor(x, y, size = 20) {
+                this.x = x;
+                this.y = y;
+                this.life = 20;
+                this.size = size;
+                this.color = '#ffff00';
+            }
+            
+            update() {
+                this.life--;
+            }
+            
+            draw() {
+                const alpha = this.life / 20;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.size/2, this.y);
+                ctx.lineTo(this.x + this.size/2, this.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y - this.size/2);
+                ctx.lineTo(this.x, this.y + this.size/2);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        // Create arrays for game objects
+        // ... existing code ...
+        let hitIndicators = [];
+        // ... existing code ...
+    </script>
+</body>
+</html>
